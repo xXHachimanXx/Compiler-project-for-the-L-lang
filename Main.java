@@ -855,5 +855,23 @@ class Parser {
         return node;
     }
 
+    ExpressionNode parseAssignmentExpression() throws IOException {
+        ExpressionNode node = parseOrExpression();
+        switch (currentToken.type) {
+            case ASSIGN:
+                eat();
+                ExpressionNode value = parseOrExpression();
+                if (node.getClass().equals(IdentifierExpressionNode.class)) {
+                    IdentifierExpressionNode identifier = (IdentifierExpressionNode) node;
+                    node = new IdentifierAssignExpressionNode(identifier, value);
+                } else {
+                    ArraySubscriptExpressionNode subscript = (ArraySubscriptExpressionNode) node;
+                    node = new ArraySubscriptAssignExpressionNode(subscript, value);
+                }
+                break;
+        }
+        return node;
+    }
+
 }
 
