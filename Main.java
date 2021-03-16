@@ -822,5 +822,18 @@ class Parser {
         return node;
     }
 
+    ExpressionNode parseEqualityExpression() throws IOException {
+        ExpressionNode node = parseRelationalExpression();
+        while (
+            currentToken.type == TokenType.EQUAL
+            || currentToken.type == TokenType.DIFFERENT
+        ) {
+            String operator = currentToken.value;
+            eat();
+            node = new BooleanBinaryExpressionNode(node, operator, parseRelationalExpression());
+        }
+        return node;
+    }
+
 }
 
