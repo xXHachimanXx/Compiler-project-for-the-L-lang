@@ -762,5 +762,23 @@ class Parser {
         return node;
     }
 
+    ExpressionNode parseUnaryExpression() throws IOException {
+        ExpressionNode node = null;
+        String operator = currentToken.value;
+        switch (currentToken.type) {
+            case PLUS:
+            case MINUS:
+                eat();
+                node = new ArithmeticUnaryExpressionNode(operator, parseExpression());
+                break;
+
+            case NOT:
+                eat();
+                node = new BooleanUnaryExpressionNode(operator, parseExpression());
+                break;
+        }
+        return node == null ? parsePrimaryExpression() : node;
+    }
+
 }
 
