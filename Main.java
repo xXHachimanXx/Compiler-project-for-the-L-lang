@@ -96,5 +96,47 @@ class Lexer {
         initKeywords();
     }
 
+    boolean isHex(char c) {
+        return (c >= '0' && c <= '9') || (c >= 'A' && c <= 'F');
+    }
+
+    Token readInteger(char firstDigit) throws IOException {
+        String str = "" + firstDigit;
+
+        char c = (char) reader.read();
+        char c1 = (char) reader.read();
+        char c2 = (char) reader.read();
+        if (
+            firstDigit == '0'
+            && c2 == 'h'
+            && isHex(c)
+            && isHex(c1)
+        ) {
+            str += c;
+            str += c1;
+            str += c2;
+            return new Token(TokenType.HEX_INTEGER, str);
+        }
+
+        reader.unread(c2);
+        reader.unread(c1);
+
+        while (c >= '0' && c <= '9') {
+            str += c;
+            c = (char) reader.read();
+        }
+
+        reader.unread(c);
+
+        int value = Integer.parseInt(str);
+        if (str.length() > 5 || value < -32768 || value > 32767) {
+            System.out.printf("%d\nlexema nao identificado [%s].\n", line, str);
+            System.exit(0);
+            return new Token(TokenType.EOF, "");
+        } else {
+            return new Token(TokenType.INTEGER, str);
+        }
+    }
+
 }
 
