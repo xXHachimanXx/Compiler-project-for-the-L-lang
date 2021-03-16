@@ -955,5 +955,38 @@ class Parser {
     //     return node;
     // }
 
+    VarDeclStatementNode parseVarDecl() throws IOException {
+        String identifier = currentToken.value;
+        int size = -1;
+        ExpressionNode expression = null;
+        eat(TokenType.IDENTIFIER);
+
+        if (currentToken.type == TokenType.LEFT_BRACKET) {
+            eat();
+            switch (currentToken.type) {
+                case INTEGER:
+                    size = Integer.parseInt(currentToken.value);
+                    eat();
+                    break;
+    
+                case HEX_INTEGER:
+                    String hexStr = currentToken.value.substring(1, 3);
+                    size = Integer.parseInt(hexStr, 16);
+                    eat();
+                    break;
+    
+                default: tokenNotExpected(); break;
+            }
+            eat(TokenType.RIGHT_BRACKET);
+        }
+
+        if (currentToken.type == TokenType.ASSIGN) {
+            eat(TokenType.ASSIGN);
+            expression = parseExpression();
+        }
+
+        return new VarDeclStatementNode(identifier, size, expression);
+    }
+
 }
 
