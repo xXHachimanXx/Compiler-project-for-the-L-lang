@@ -186,5 +186,22 @@ class Lexer {
         return c;
     }
 
+    boolean isValidChar(char c) {
+        return (
+            isalnum(c) || c == ' ' || c == '\t' || c == '_' || c == '.' || c == ','
+            || c == ';' || c == ':' || c == '(' || c == ')' || c == '{' || c == '}'
+            || c == '[' || c == ']' || c == '=' || c == '<' || c == '>' || c == '%'
+            || c == '+' || c == '-' || c == '*' || c == '/' || c == '\n' || c == '\r'
+            || c == '\'' || c == '"' || c == (char) -1
+        );
+    }
+
+    void assertValidChar(char c) {
+        if (!isValidChar(c)) {
+            System.out.printf("%d\ncaractere invalido.\n", line);
+            System.exit(0);
+        }
+    }
+
 }
 
