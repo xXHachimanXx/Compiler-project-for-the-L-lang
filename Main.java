@@ -673,3 +673,34 @@ class ProgramNode extends Node {
     }
 }
 
+class Parser {
+    Lexer lexer;
+    Token currentToken;
+
+    Parser(Lexer lexer) throws IOException {
+        this.lexer = lexer;
+        this.currentToken = lexer.next();
+    }
+
+    void tokenNotExpected() {
+        if (currentToken.type == TokenType.EOF)
+            System.out.printf("%d\nfim de arquivo nao esperado.\n", lexer.line);
+        else
+            System.out.printf("%d\ntoken nao esperado [%s].\n",
+                lexer.line, currentToken.value);
+        System.exit(0);
+    }
+
+    void eat() throws IOException {
+        System.out.printf("Ate type = %s, value = '%s'\n",
+            currentToken.type.name(), currentToken.value);
+        currentToken = lexer.next();
+    }
+
+    void eat(TokenType type) throws IOException {
+        if (currentToken.type == type) eat();
+        else tokenNotExpected();
+    }
+
+}
+
