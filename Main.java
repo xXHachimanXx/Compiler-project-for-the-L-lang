@@ -879,5 +879,81 @@ class Parser {
         return node;
     }
 
+    // ExpressionNode parseExpression() throws IOException {
+    //     ExpressionNode node = null;
+    //     switch (currentToken.type) {
+    //         case TRUE:
+    //         case FALSE:
+    //             node = new BooleanExpressionNode(currentToken.type == TokenType.TRUE);
+    //             eat();
+    //             break;
+
+    //         case CHAR:
+    //             node = new CharExpressionNode(currentToken.value.charAt(0));
+    //             eat();
+    //             break;
+
+    //         case INTEGER:
+    //             node = new IntExpressionNode(Integer.parseInt(currentToken.value));
+    //             eat();
+    //             break;
+
+    //         case HEX_INTEGER:
+    //             String hexStr = currentToken.value.substring(1, 3);
+    //             node = new IntExpressionNode(Integer.parseInt(hexStr, 16));
+    //             eat();
+    //             break;
+
+    //         case STRING:
+    //             node = new StringExpressionNode(currentToken.value);
+    //             eat();
+    //             break;
+
+    //         case LEFT_PAREN:
+    //             eat();
+    //             node = new ParenthesizedExpressionNode(parseExpression());
+    //             eat(TokenType.RIGHT_PAREN);
+    //             break;
+
+    //         case PLUS:
+    //         case MINUS:
+    //         case NOT:
+    //             eat();
+    //             node = new ParenthesizedExpressionNode(parseExpression());
+    //             eat(TokenType.RIGHT_PAREN);
+    //             break;
+
+    //         case IDENTIFIER:
+    //             ExpressionNode subscriptExpr = null, value = null;
+    //             String identifier = currentToken.value;
+    //             eat();
+
+    //             if (currentToken.type == TokenType.LEFT_BRACKET) {
+    //                 eat(TokenType.LEFT_BRACKET);
+    //                 subscriptExpr = parseExpression();
+    //                 eat(TokenType.RIGHT_BRACKET);
+    //             }
+
+    //             if (currentToken.type == TokenType.ASSIGN) {
+    //                 eat(TokenType.ASSIGN);
+    //                 value = parseExpression();
+    //             }
+
+    //             if (subscriptExpr == null && value == null) {
+    //                 node = new IdentifierExpressionNode(identifier);
+    //             } else if (subscriptExpr == null) {
+    //                 node = new IdentifierAssignExpressionNode(identifier, value);
+    //             } else if (value == null) {
+    //                 node = new ArraySubscriptExpressionNode(identifier, subscriptExpr);
+    //             } else {
+    //                 node = new ArraySubscriptAssignExpressionNode(identifier, subscriptExpr, value);
+    //             }
+    //             break;
+
+    //         default: tokenNotExpected(); break;
+    //     }
+    //     return node;
+    // }
+
 }
 
