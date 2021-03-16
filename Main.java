@@ -203,5 +203,42 @@ class Lexer {
         }
     }
 
+    Token readString() throws IOException {
+        String str = "";
+        char c = (char) reader.read();
+        while (c != '"') {
+            if (c == -1) {
+                System.out.printf("%d\nfim de arquivo nao esperado.\n", line);
+                System.exit(0);
+            }
+            assertValidChar(c);
+            str += c;
+            c = (char) reader.read();
+        }
+        return new Token(TokenType.STRING, str);
+    }
+
+    Token readChar() throws IOException {
+        char c = (char) reader.read();
+        if (c == -1) {
+            System.out.printf("%d\nfim de arquivo nao esperado.\n", line);
+            System.exit(0);
+        }
+        assertValidChar(c);
+
+        char apostrophe = (char) reader.read();
+        if (apostrophe == -1) {
+            System.out.printf("%d\nfim de arquivo nao esperado.\n", line);
+            System.exit(0);
+        }
+        assertValidChar(apostrophe);
+
+        if (apostrophe != '\'') {
+            System.out.printf("%d\nlexema nao identificado ['%c%c].\n", line, c, apostrophe);
+            System.exit(0);
+        }
+        return new Token(TokenType.CHAR, c);
+    }
+
 }
 
