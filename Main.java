@@ -2,6 +2,7 @@ import java.io.IOException;
 import java.io.PushbackReader;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.io.InputStreamReader;
 
 enum TokenType {
     EOF,
@@ -1087,7 +1088,7 @@ class Parser {
         eat(TokenType.RIGHT_PAREN);
         ForStatementNode node = new ForStatementNode(init, condition, inc, parseStatement());
         return node;
-}
+    }
 
     StatementNode parseStatement() throws IOException {
         StatementNode node = null;
@@ -1165,3 +1166,16 @@ class Parser {
     }
 }
 
+public class Main {
+    public static void main(String[] args) throws IOException {
+        PushbackReader input = new PushbackReader(new InputStreamReader(System.in), 3);
+        Lexer lexer = new Lexer(input);
+        // Token tok = lexer.next();
+        // while (tok.type != TokenType.EOF) {
+        //     // System.out.printf("id = %s, lexem = '%s'\n", tok.type.name(), tok.value);
+        //     tok = lexer.next();
+        // }
+        new Parser(lexer).parseProgram();
+        System.out.printf("%d linhas compiladas.\n", lexer.line);
+    }
+}
