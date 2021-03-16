@@ -48,3 +48,15 @@ enum TokenType {
     SMALLER_OR_EQUAL,
 }
 
+class Token {
+    TokenType type;
+    String value;
+    Token(TokenType type, String value) {
+        this.type = type;
+        this.value = value;
+    }
+    Token(TokenType type, char c) {
+        this(type, "" + c);
+    }
+}
+
