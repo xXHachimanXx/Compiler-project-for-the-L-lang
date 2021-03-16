@@ -1089,3 +1089,59 @@ class Parser {
         return node;
 }
 
+    StatementNode parseStatement() throws IOException {
+        StatementNode node = null;
+        switch (currentToken.type) {
+            case LEFT_BRACES:
+                eat(TokenType.LEFT_BRACES);
+                node = parseCompoundStatement();
+                break;
+
+            case WRITE:
+                eat(TokenType.WRITE);
+                node = parseWriteStatement();
+                break;
+
+            case WRITELN:
+                eat(TokenType.WRITELN);
+                node = parseWritelnStatement();
+                break;
+
+            case READLN:
+                eat(TokenType.READLN);
+                node = parseReadlnStatement();
+                break;
+
+            case RETURN:
+                eat(TokenType.RETURN);
+                node = parseReturnStatement();
+                break;
+
+            case INT:
+            case CHAR:
+            case BOOLEAN:
+            case FINAL:
+                eat();
+                node = parseVarsDecl();
+                eat(TokenType.SEMICOLON);
+                break;
+
+            case IF:
+                eat(TokenType.IF);
+                node = parseIfStatement();
+                break;
+
+            case FOR:
+                eat(TokenType.FOR);
+                node = parseForStatement();
+                break;
+
+            default:
+                node = new ExpressionStatementNode(parseExpression());
+                eat(TokenType.SEMICOLON);
+                break;
+        }
+        System.out.println(node.getClass().getName());
+        return node;
+    }
+
