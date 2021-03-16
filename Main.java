@@ -999,5 +999,13 @@ class Parser {
         return node;
     }
 
+    CompoundStatementNode parseCompoundStatement() throws IOException {
+        CompoundStatementNode node = new CompoundStatementNode();
+        while (currentToken.type != TokenType.RIGHT_BRACES)
+            node.stmts.add(parseStatement());
+        eat(TokenType.RIGHT_BRACES);
+        return node;
+    }
+
 }
 
