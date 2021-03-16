@@ -3,16 +3,16 @@
 Language Grammar:
 
 ```
-PROGRAM ::= (VAR_DECLS ';')* 'main' STATEMENT
+PROGRAM ::= ((VAR_DECLS | CONST_DECLS) ';')* 'main' '{' STATEMENT* '}'
 
 STATEMENT ::=
     '{' STATEMENT* '}'
-    | EXPRESSION ';'
     | ('write' | 'writeln') '(' EXPRESSION (',' EXPRESSION)* ')' ';'
     | 'readln' '(' IDENTIFIER ('[' EXPRESSION ']')? ')' ';'
     | 'if' '(' EXPRESSION ')' 'then' STATEMENT ('else' STATEMENT)?
     | 'for' '(' ASSIGN_STATEMENTS? ';' EXPRESSION? ';' ASSIGN_STATEMENTS? ')' STATEMENT
     | 'return' EXPRESSION ';'
+    | ASSIGN_STATEMENTS ';'
     | VAR_DECLS ';'
     | CONST_DECLS ';'
 
@@ -26,7 +26,7 @@ HEX_INTEGER ::= '0' [0-9ABCDEF] [0-9ABCDEF] 'h'
 
 IDENTIFIER ::= ( '_' [a-zA-Z0-9_]* [a-zA-Z0-9] | [a-zA-Z] ) [a-zA-Z0-9_]*
 
-ASSIGN_STATEMENT ::= IDENTIFIER ':=' EXPRESSION
+ASSIGN_STATEMENT ::= IDENTIFIER ('[' EXPRESSION ']')? ':=' EXPRESSION
 
 ASSIGN_STATEMENTS ::= ASSIGN_STATEMENT (',' ASSIGN_STATEMENT)*
 
@@ -47,7 +47,7 @@ PRIMARY_EXPRESSION ::=
     | '(' EXPRESSION ')'
     | IDENTIFIER ('[' EXPRESSION ']')?
 
-UNARY_EXPRESSION ::= 'not'* PRIMARY_EXPRESSION
+UNARY_EXPRESSION ::= ('not' UNARY_EXPRESSION) | PRIMARY_EXPRESSION
 
 MULTIPLICATIVE_EXPRESSION ::= UNARY_EXPRESSION (('*' | '/' | '%' | 'and') UNARY_EXPRESSION)*
 
