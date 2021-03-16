@@ -441,16 +441,16 @@ class ArraySubscriptExpressionNode extends ExpressionNode {
 
 class VarDeclStatementNode extends StatementNode {
     String identifier;
-    ExpressionNode sizeExpression;
-    ExpressionNode valueExpression;
+    ExpressionNode size;
+    ExpressionNode value;
     VarDeclStatementNode(
         String identifier,
-        ExpressionNode sizeExpression,
-        ExpressionNode valueExpression
+        ExpressionNode size,
+        ExpressionNode value
     ) {
         this.identifier = identifier;
-        this.sizeExpression = sizeExpression;
-        this.valueExpression = valueExpression;
+        this.size = size;
+        this.value = value;
     }
 }
 
@@ -460,16 +460,16 @@ class VarDeclsStatementNode extends StatementNode {
 
 class ConstDeclStatementNode extends StatementNode {
     String identifier;
-    ExpressionNode sizeExpression;
-    ExpressionNode valueExpression;
+    ExpressionNode size;
+    ExpressionNode value;
     ConstDeclStatementNode(
         String identifier,
-        ExpressionNode sizeExpression,
-        ExpressionNode valueExpression
+        ExpressionNode size,
+        ExpressionNode value
     ) {
         this.identifier = identifier;
-        this.sizeExpression = sizeExpression;
-        this.valueExpression = valueExpression;
+        this.size = size;
+        this.value = value;
     }
 }
 
@@ -538,28 +538,26 @@ class IfStatementNode extends StatementNode {
 
 abstract class AssignStatementNode extends StatementNode {
     String identifier;
-    AssignStatementNode(String identifier) {
+    ExpressionNode value;
+    AssignStatementNode(String identifier, ExpressionNode value) {
         this.identifier = identifier;
+        this.value = value;
     }
 }
 
 class IdentifierAssignStatementNode extends AssignStatementNode {
-    ExpressionNode expression;
-    IdentifierAssignStatementNode(String identifier, ExpressionNode expression) {
-        super(identifier);
-        this.expression = expression;
+    IdentifierAssignStatementNode(String identifier, ExpressionNode value) {
+        super(identifier, value);
     }
 }
 
 class ArraySubscriptAssignStatementNode extends AssignStatementNode {
-    ExpressionNode sizeExpression;
-    ExpressionNode valueExpression;
+    ExpressionNode index;
     ArraySubscriptAssignStatementNode(
-        String identifier, ExpressionNode sizeExpression, ExpressionNode valueExpression
+        String identifier, ExpressionNode index, ExpressionNode value
     ) {
-        super(identifier);
-        this.sizeExpression = sizeExpression;
-        this.valueExpression = valueExpression;
+        super(identifier, value);
+        this.index = index;
     }
 }
 
@@ -756,22 +754,22 @@ class Parser {
 
     VarDeclStatementNode parseVarDecl() throws IOException {
         String identifier = currentToken.value;
-        ExpressionNode sizeExpression = null;
-        ExpressionNode valueExpression = null;
+        ExpressionNode size = null;
+        ExpressionNode value = null;
         eat(TokenType.IDENTIFIER);
 
         if (currentToken.type == TokenType.LEFT_BRACKET) {
             eat();
-            sizeExpression = parseExpression();
+            size = parseExpression();
             eat(TokenType.RIGHT_BRACKET);
         }
 
         else if (currentToken.type == TokenType.ASSIGN) {
             eat(TokenType.ASSIGN);
-            valueExpression = parseExpression();
+            value = parseExpression();
         }
 
-        return new VarDeclStatementNode(identifier, sizeExpression, valueExpression);
+        return new VarDeclStatementNode(identifier, size, value);
     }
 
     VarDeclsStatementNode parseVarDecls() throws IOException {
@@ -787,8 +785,8 @@ class Parser {
 
     ConstDeclStatementNode parseConstDecl() throws IOException {
         String identifier = currentToken.value;
-        ExpressionNode sizeExpression = null;
-        ExpressionNode valueExpression = null;
+        ExpressionNode size = null;
+        ExpressionNode value = null;
         eat(TokenType.IDENTIFIER);
 
         if (
@@ -798,16 +796,16 @@ class Parser {
 
         if (currentToken.type == TokenType.LEFT_BRACKET) {
             eat();
-            sizeExpression = parseExpression();
+            size = parseExpression();
             eat(TokenType.RIGHT_BRACKET);
         }
 
         else if (currentToken.type == TokenType.EQUAL) {
             eat();
-            valueExpression = parseExpression();
+            value = parseExpression();
         }
 
-        return new ConstDeclStatementNode(identifier, sizeExpression, valueExpression);
+        return new ConstDeclStatementNode(identifier, size, value);
     }
 
     ConstDeclsStatementNode parseConstDecls() throws IOException {
