@@ -138,5 +138,40 @@ class Lexer {
         }
     }
 
+    boolean justUnderlines(String str) {
+        for (char c : str.toCharArray())
+            if (c != '_') return false;
+        return true;
+    }
+
+    boolean isalnum(char c) {
+        return (
+            (c >= '0' && c <= '9')
+            || (c >= 'a' && c <= 'z')
+            || (c >= 'A' && c <= 'Z')
+        );
+    }
+
+    Token readIdentifier(char firstDigit) throws IOException {
+        String str = "";
+        str += firstDigit;
+
+        char c = (char) reader.read();
+        while (isalnum(c) || c == '_') {
+            assertValidChar(c);
+            str += c;
+            c = (char) reader.read();
+        }
+        reader.unread(c);
+
+        if (justUnderlines(str)) {
+            System.out.printf("%d\nlexema nao identificado [%s].\n", line, str);
+            System.exit(0);
+        }
+
+        if (keywords.containsKey(str)) return keywords.get(str);
+        else return new Token(TokenType.IDENTIFIER, str);
+    }
+
 }
 
