@@ -873,5 +873,11 @@ class Parser {
         return node;
     }
 
+    ExpressionNode parseExpression() throws IOException {
+        ExpressionNode node = parseAssignmentExpression();
+        System.out.println(node.getClass().getName());
+        return node;
+    }
+
 }
 
