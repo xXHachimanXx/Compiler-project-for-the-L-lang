@@ -1,3 +1,4 @@
+import java.io.IOException;
 import java.io.PushbackReader;
 import java.util.HashMap;
 
@@ -238,6 +239,59 @@ class Lexer {
             System.exit(0);
         }
         return new Token(TokenType.CHAR, c);
+    }
+
+    void skipSingleLineComment() throws IOException {
+        char c;
+        do { c = (char) reader.read(); }
+        while (c != '\n' && c != -1);
+        if (c == '\n') line++;
+    }
+
+    void skipMultiLineComment() throws IOException {
+        char c;
+        do {
+            do {
+                c = (char) reader.read();
+                if (c == '\n') line++;
+            } while (c != '*' && c != -1);
+
+            if (c == -1) {
+                System.out.printf("%d\nfim de arquivo nao esperado.\n", line);
+                System.exit(0);
+            }
+
+            do { c = (char) reader.read(); }
+            while (c == '*');
+
+            if (c == '\n') line++;
+            else if (c == -1) {
+                System.out.printf("%d\nfim de arquivo nao esperado.\n", line);
+                System.exit(0);
+            }
+        } while (c != '/');
+    }
+
+    void skipComments() throws IOException {
+        char c = (char) reader.read();
+        if (c == '/') skipSingleLineComment();
+        else if (c == '*') skipMultiLineComment();
+        else reader.unread(c);
+    }
+
+    char skipSpacesAndComments(char c) throws IOException {
+        while (isSpace(c) || c == '/') {
+            if (isSpace(c)) {
+                if (c == '\n') line++;
+                c = skipSpaces();
+            }
+            if (c == '/') {
+                skipComments();
+                c = (char) reader.read();
+            }
+            assertValidChar(c);
+        }
+        return c;
     }
 
 }
