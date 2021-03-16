@@ -60,6 +60,7 @@ EXPRESSION ::= RELATIONAL_EXPRESSION
 
 References:
 
+- [Draw railroad diagrams for grammars](https://www.bottlecaps.de/rr/ui)
 - [Writing a programming language - the Lexer](https://www.youtube.com/watch?v=TG0qRDrUPpA)
 - [Compiler Design: Predictive Parsing-LL(1)](https://www.youtube.com/watch?v=QoOALbef3ZM)
 - [Predictive Recursive Descent Parsing](https://www.tutorialspoint.com/compiler_design/compiler_design_top_down_parser.htm)
@@ -69,3 +70,4 @@ References:
 - [Example Language Video](https://www.youtube.com/watch?v=eF9qWbuQLuw&t=1034s)
 - [Compilers Course](https://www.youtube.com/watch?v=8rB8Dvczc1g&list=PL0Z-gyL9saMcajYH26KWKQG0nH2C2fsMQ&index=2)
 - [Pascal Operator Precedence](https://montcs.bloomu.edu/Information/operator-precedence.C-Python-Pascal.html#Pascal_ops)
+- [Pascal Grammar in BNF (Backus-Naur Form)](https://condor.depaul.edu/ichu/csc447/notes/wk2/pascal.html)
