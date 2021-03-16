@@ -1007,5 +1007,31 @@ class Parser {
         return node;
     }
 
+    WriteStatementNode parseWriteStatement() throws IOException {
+        WriteStatementNode node = new WriteStatementNode();
+        eat(TokenType.LEFT_PAREN);
+        node.args.add(parseExpression());
+        while (currentToken.type == TokenType.COMMA) {
+            eat(TokenType.COMMA);
+            node.args.add(parseExpression());
+        }
+        eat(TokenType.RIGHT_PAREN);
+        eat(TokenType.SEMICOLON);
+        return node;
+    }
+
+    WritelnStatementNode parseWritelnStatement() throws IOException {
+        WritelnStatementNode node = new WritelnStatementNode();
+        eat(TokenType.LEFT_PAREN);
+        node.args.add(parseExpression());
+        while (currentToken.type == TokenType.COMMA) {
+            eat(TokenType.COMMA);
+            node.args.add(parseExpression());
+        }
+        eat(TokenType.RIGHT_PAREN);
+        eat(TokenType.SEMICOLON);
+        return node;
+    }
+
 }
 
