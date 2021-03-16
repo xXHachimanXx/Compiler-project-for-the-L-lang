@@ -1051,5 +1051,11 @@ class Parser {
         return node;
     }
 
+    ReturnStatementNode parseReturnStatement() throws IOException {
+        ReturnStatementNode node = new ReturnStatementNode(parseExpression());
+        eat(TokenType.SEMICOLON);
+        return node;
+    }
+
 }
 
