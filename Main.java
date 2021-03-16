@@ -1145,3 +1145,23 @@ class Parser {
         return node;
     }
 
+    ProgramNode parseProgram() throws IOException {
+        ProgramNode node = new ProgramNode();
+        while (
+            currentToken.type == TokenType.INT
+            || currentToken.type == TokenType.CHAR
+            || currentToken.type == TokenType.BOOLEAN
+            || currentToken.type == TokenType.FINAL
+        ) {
+            eat();
+            node.varsDecl = parseVarsDecl();
+            eat(TokenType.SEMICOLON);
+        }
+        eat(TokenType.MAIN);
+        node.stmt = parseStatement();
+        eat(TokenType.EOF);
+        System.out.println(node.getClass().getName());
+        return node;
+    }
+}
+
