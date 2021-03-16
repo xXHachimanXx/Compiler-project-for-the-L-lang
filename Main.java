@@ -780,5 +780,19 @@ class Parser {
         return node == null ? parsePrimaryExpression() : node;
     }
 
+    ExpressionNode parseMultiplicativeExpression() throws IOException {
+        ExpressionNode node = parseUnaryExpression();
+        while (
+            currentToken.type == TokenType.ASTERISK
+            || currentToken.type == TokenType.BACKSLASH
+            || currentToken.type == TokenType.PERCENT
+        ) {
+            String operator = currentToken.value;
+            eat();
+            node = new ArithmeticBinaryExpressionNode(node, operator, parseUnaryExpression());
+        }
+        return node;
+    }
+
 }
 
