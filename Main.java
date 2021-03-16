@@ -1033,5 +1033,23 @@ class Parser {
         return node;
     }
 
+    ReadlnStatementNode parseReadlnStatement() throws IOException {
+        ReadlnStatementNode node;
+        eat(TokenType.LEFT_PAREN);
+        String identifier = currentToken.value;
+        eat(TokenType.IDENTIFIER);
+        if (currentToken.type == TokenType.LEFT_BRACKET) {
+            eat(TokenType.LEFT_BRACKET);
+            ExpressionNode expression = parseExpression();
+            node = new ReadlnArrayStatementNode(identifier, expression);
+            eat(TokenType.RIGHT_BRACKET);
+        } else {
+            node = new ReadlnVarStatementNode(identifier);
+        }
+        eat(TokenType.RIGHT_PAREN);
+        eat(TokenType.SEMICOLON);
+        return node;
+    }
+
 }
 
