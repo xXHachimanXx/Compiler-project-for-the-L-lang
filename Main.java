@@ -794,5 +794,18 @@ class Parser {
         return node;
     }
 
+    ExpressionNode parseAdditiveExpression() throws IOException {
+        ExpressionNode node = parseMultiplicativeExpression();
+        while (
+            currentToken.type == TokenType.PLUS
+            || currentToken.type == TokenType.MINUS
+        ) {
+            String operator = currentToken.value;
+            eat();
+            node = new ArithmeticBinaryExpressionNode(node, operator, parseMultiplicativeExpression());
+        }
+        return node;
+    }
+
 }
 
