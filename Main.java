@@ -357,58 +357,18 @@ class Lexer {
     }
 }
 
-enum ASTNodeType {
-    PROGRAM,
-    VAR_DECL_STATEMENT,
-    VARS_DECL_STATEMENT,
-    COMPOUND_STATEMENT,
-    EXPRESSION_STATEMENT,
-    WRITE_STATEMENT,
-    WRITELN_STATEMENT,
-    READLN_VAR_STATEMENT,
-    READLN_ARRAY_STATEMENT,
-    RETURN_STATEMENT,
-    IF_STATEMENT,
-    FOR_STATEMENT,
-    INT_EXPRESSION,
-    CHAR_EXPRESSION,
-    STRING_EXPRESSION,
-    BOOLEAN_EXPRESSION,
-    IDENTIFIER_EXPRESSION,
-    PARENTHESIZED_EXPRESSION,
-    ASSIGNMENT_BINARY_EXPRESSION,
-    ARITHMETIC_UNARY_EXPRESSION,
-    ARITHMETIC_BINARY_EXPRESSION,
-    BOOLEAN_UNARY_EXPRESSION,
-    BOOLEAN_BINARY_EXPRESSION,
-    IDENTIFIER_ASSIGN_EXPRESSION,
-    ARRAY_SUBSCRIPT_EXPRESSION,
-    ARRAY_SUBSCRIPT_ASSIGN_EXPRESSION,
-}
-
 abstract class Node {
-    ASTNodeType type;
-    Node(ASTNodeType type) {
-        this.type = type;
-    }
 }
 
 abstract class StatementNode extends Node {
-    StatementNode(ASTNodeType type) {
-        super(type);
-    }
 }
 
 abstract class ExpressionNode extends Node {
-    ExpressionNode(ASTNodeType type) {
-        super(type);
-    }
 }
 
 class BooleanExpressionNode extends ExpressionNode {
     boolean value;
     BooleanExpressionNode(boolean value) {
-        super(ASTNodeType.BOOLEAN_EXPRESSION);
         this.value = value;
     }
 }
@@ -416,7 +376,6 @@ class BooleanExpressionNode extends ExpressionNode {
 class IntExpressionNode extends ExpressionNode {
     int value;
     IntExpressionNode(int value) {
-        super(ASTNodeType.INT_EXPRESSION);
         this.value = value;
     }
 }
@@ -424,7 +383,6 @@ class IntExpressionNode extends ExpressionNode {
 class CharExpressionNode extends ExpressionNode {
     char value;
     CharExpressionNode(char value) {
-        super(ASTNodeType.CHAR_EXPRESSION);
         this.value = value;
     }
 }
@@ -432,7 +390,6 @@ class CharExpressionNode extends ExpressionNode {
 class StringExpressionNode extends ExpressionNode {
     String value;
     StringExpressionNode(String value) {
-        super(ASTNodeType.STRING_EXPRESSION);
         this.value = value;
     }
 }
@@ -440,67 +397,26 @@ class StringExpressionNode extends ExpressionNode {
 class ParenthesizedExpressionNode extends ExpressionNode {
     ExpressionNode expression;
     ParenthesizedExpressionNode(ExpressionNode expression) {
-        super(ASTNodeType.PARENTHESIZED_EXPRESSION);
         this.expression = expression;
     }
 }
 
-class AssignmentBinaryExpressionNode extends ExpressionNode {
-    ExpressionNode leftExpression;
-    String operator;
-    ExpressionNode rightExpression;
-    AssignmentBinaryExpressionNode(
-        ExpressionNode leftExpression, String operator, ExpressionNode rightExpression
-    ) {
-        super(ASTNodeType.ASSIGNMENT_BINARY_EXPRESSION);
-        this.leftExpression = leftExpression;
-        this.operator = operator;
-        this.rightExpression = rightExpression;
-    }
-}
-
-class ArithmeticUnaryExpressionNode extends ExpressionNode {
+class UnaryExpressionNode extends ExpressionNode {
     String operator;
     ExpressionNode expression;
-    ArithmeticUnaryExpressionNode(String operator, ExpressionNode expression) {
-        super(ASTNodeType.ARITHMETIC_UNARY_EXPRESSION);
+    UnaryExpressionNode(String operator, ExpressionNode expression) {
         this.operator = operator;
         this.expression = expression;
     }
 }
 
-class ArithmeticBinaryExpressionNode extends ExpressionNode {
+class BinaryExpressionNode extends ExpressionNode {
     ExpressionNode leftExpression;
     String operator;
     ExpressionNode rightExpression;
-    ArithmeticBinaryExpressionNode(
+    BinaryExpressionNode(
         ExpressionNode leftExpression, String operator, ExpressionNode rightExpression
     ) {
-        super(ASTNodeType.ARITHMETIC_BINARY_EXPRESSION);
-        this.leftExpression = leftExpression;
-        this.operator = operator;
-        this.rightExpression = rightExpression;
-    }
-}
-
-class BooleanUnaryExpressionNode extends ExpressionNode {
-    String operator;
-    ExpressionNode expression;
-    BooleanUnaryExpressionNode(String operator, ExpressionNode expression) {
-        super(ASTNodeType.BOOLEAN_UNARY_EXPRESSION);
-        this.operator = operator;
-        this.expression = expression;
-    }
-}
-
-class BooleanBinaryExpressionNode extends ExpressionNode {
-    ExpressionNode leftExpression;
-    String operator;
-    ExpressionNode rightExpression;
-    BooleanBinaryExpressionNode(
-        ExpressionNode leftExpression, String operator, ExpressionNode rightExpression
-    ) {
-        super(ASTNodeType.BOOLEAN_BINARY_EXPRESSION);
         this.leftExpression = leftExpression;
         this.operator = operator;
         this.rightExpression = rightExpression;
@@ -510,20 +426,7 @@ class BooleanBinaryExpressionNode extends ExpressionNode {
 class IdentifierExpressionNode extends ExpressionNode {
     String identifier;
     IdentifierExpressionNode(String identifier) {
-        super(ASTNodeType.IDENTIFIER_EXPRESSION);
         this.identifier = identifier;
-    }
-}
-
-class IdentifierAssignExpressionNode extends ExpressionNode {
-    IdentifierExpressionNode identifier;
-    ExpressionNode value;
-    IdentifierAssignExpressionNode(
-        IdentifierExpressionNode identifier, ExpressionNode value
-    ) {
-        super(ASTNodeType.IDENTIFIER_ASSIGN_EXPRESSION);
-        this.identifier = identifier;
-        this.value = value;
     }
 }
 
@@ -531,85 +434,73 @@ class ArraySubscriptExpressionNode extends ExpressionNode {
     String identifier;
     ExpressionNode subscriptExpr;
     ArraySubscriptExpressionNode(String identifier, ExpressionNode subscriptExpr) {
-        super(ASTNodeType.ARRAY_SUBSCRIPT_EXPRESSION);
         this.identifier = identifier;
         this.subscriptExpr = subscriptExpr;
     }
 }
 
-class ArraySubscriptAssignExpressionNode extends ExpressionNode {
-    ArraySubscriptExpressionNode subscript;
-    ExpressionNode value;
-    ArraySubscriptAssignExpressionNode(
-        ArraySubscriptExpressionNode subscript, ExpressionNode value
-    ) {
-        super(ASTNodeType.ARRAY_SUBSCRIPT_ASSIGN_EXPRESSION);
-        this.subscript = subscript;
-        this.value = value;
-    }
-}
-
 class VarDeclStatementNode extends StatementNode {
     String identifier;
-    int size;
-    ExpressionNode expression;
+    ExpressionNode sizeExpression;
+    ExpressionNode valueExpression;
     VarDeclStatementNode(
         String identifier,
-        int size,
-        ExpressionNode expression
+        ExpressionNode sizeExpression,
+        ExpressionNode valueExpression
     ) {
-        super(ASTNodeType.VAR_DECL_STATEMENT);
         this.identifier = identifier;
-        this.size = size;
-        this.expression = expression;
+        this.sizeExpression = sizeExpression;
+        this.valueExpression = valueExpression;
     }
 }
 
-class VarsDeclStatementNode extends StatementNode {
+class VarDeclsStatementNode extends StatementNode {
     ArrayList<VarDeclStatementNode> varsDecl = new ArrayList<>();
-    VarsDeclStatementNode() {
-        super(ASTNodeType.VARS_DECL_STATEMENT);
+}
+
+class ConstDeclStatementNode extends StatementNode {
+    String identifier;
+    ExpressionNode sizeExpression;
+    ExpressionNode valueExpression;
+    ConstDeclStatementNode(
+        String identifier,
+        ExpressionNode sizeExpression,
+        ExpressionNode valueExpression
+    ) {
+        this.identifier = identifier;
+        this.sizeExpression = sizeExpression;
+        this.valueExpression = valueExpression;
     }
+}
+
+class ConstDeclsStatementNode extends StatementNode {
+    ArrayList<ConstDeclStatementNode> constDecls = new ArrayList<>();
 }
 
 class CompoundStatementNode extends StatementNode {
     ArrayList<StatementNode> stmts = new ArrayList<>();
-    CompoundStatementNode() {
-        super(ASTNodeType.COMPOUND_STATEMENT);
-    }
 }
 
 class ExpressionStatementNode extends StatementNode {
     ExpressionNode expression;
     ExpressionStatementNode(ExpressionNode expression) {
-        super(ASTNodeType.EXPRESSION_STATEMENT);
     }
 }
 
 class WriteStatementNode extends StatementNode {
     ArrayList<ExpressionNode> args = new ArrayList<>();
-    WriteStatementNode() {
-        super(ASTNodeType.WRITE_STATEMENT);
-    }
 }
 
 class WritelnStatementNode extends StatementNode {
     ArrayList<ExpressionNode> args = new ArrayList<>();
-    WritelnStatementNode() {
-        super(ASTNodeType.WRITELN_STATEMENT);
-    }
 }
 
 abstract class ReadlnStatementNode extends StatementNode {
-    ReadlnStatementNode(ASTNodeType type) {
-        super(type);
-    }
 }
 
 class ReadlnVarStatementNode extends ReadlnStatementNode {
     String identifier;
     ReadlnVarStatementNode(String identifier) {
-        super(ASTNodeType.READLN_VAR_STATEMENT);
         this.identifier = identifier;
     }
 }
@@ -618,7 +509,6 @@ class ReadlnArrayStatementNode extends ReadlnStatementNode {
     String identifier;
     ExpressionNode expression;
     ReadlnArrayStatementNode(String identifier, ExpressionNode expression) {
-        super(ASTNodeType.READLN_VAR_STATEMENT);
         this.identifier = identifier;
         this.expression = expression;
     }
@@ -627,7 +517,6 @@ class ReadlnArrayStatementNode extends ReadlnStatementNode {
 class ReturnStatementNode extends StatementNode {
     ExpressionNode expression;
     ReturnStatementNode(ExpressionNode expression) {
-        super(ASTNodeType.RETURN_STATEMENT);
         this.expression = expression;
     }
 }
@@ -641,25 +530,54 @@ class IfStatementNode extends StatementNode {
         StatementNode ifStatement,
         StatementNode elseStatement
     ) {
-        super(ASTNodeType.IF_STATEMENT);
         this.expression = expression;
         this.ifStatement = ifStatement;
         this.elseStatement = elseStatement;
     }
 }
 
+abstract class AssignStatementNode extends StatementNode {
+    String identifier;
+    AssignStatementNode(String identifier) {
+        this.identifier = identifier;
+    }
+}
+
+class IdentifierAssignStatementNode extends AssignStatementNode {
+    ExpressionNode expression;
+    IdentifierAssignStatementNode(String identifier, ExpressionNode expression) {
+        super(identifier);
+        this.expression = expression;
+    }
+}
+
+class ArraySubscriptAssignStatementNode extends AssignStatementNode {
+    ExpressionNode sizeExpression;
+    ExpressionNode valueExpression;
+    ArraySubscriptAssignStatementNode(
+        String identifier, ExpressionNode sizeExpression, ExpressionNode valueExpression
+    ) {
+        super(identifier);
+        this.sizeExpression = sizeExpression;
+        this.valueExpression = valueExpression;
+    }
+}
+
+class AssignStatementsNode extends StatementNode {
+    ArrayList<AssignStatementNode> stmts = new ArrayList<>();
+}
+
 class ForStatementNode extends StatementNode {
-    ExpressionNode init;
+    AssignStatementsNode init;
     ExpressionNode condition;
-    ExpressionNode inc;
+    AssignStatementsNode inc;
     StatementNode stmt;
     ForStatementNode(
-        ExpressionNode init,
+        AssignStatementsNode init,
         ExpressionNode condition,
-        ExpressionNode inc,
+        AssignStatementsNode inc,
         StatementNode stmt
     ) {
-        super(ASTNodeType.FOR_STATEMENT);
         this.init = init;
         this.condition = condition;
         this.inc = inc;
@@ -668,11 +586,9 @@ class ForStatementNode extends StatementNode {
 }
 
 class ProgramNode extends Node {
-    VarsDeclStatementNode varsDecl;
-    StatementNode stmt;
-    ProgramNode() {
-        super(ASTNodeType.PROGRAM);
-    }
+    ArrayList<VarDeclsStatementNode> varDecls = new ArrayList<>();
+    ArrayList<ConstDeclsStatementNode> constDecls = new ArrayList<>();
+    ArrayList<StatementNode> stmts = new ArrayList<>();
 }
 
 class Parser {
@@ -767,15 +683,9 @@ class Parser {
         ExpressionNode node = null;
         String operator = currentToken.value;
         switch (currentToken.type) {
-            case PLUS:
-            case MINUS:
-                eat();
-                node = new ArithmeticUnaryExpressionNode(operator, parseExpression());
-                break;
-
             case NOT:
                 eat();
-                node = new BooleanUnaryExpressionNode(operator, parseExpression());
+                node = new UnaryExpressionNode(operator, parseUnaryExpression());
                 break;
         }
         return node == null ? parsePrimaryExpression() : node;
@@ -787,23 +697,36 @@ class Parser {
             currentToken.type == TokenType.ASTERISK
             || currentToken.type == TokenType.BACKSLASH
             || currentToken.type == TokenType.PERCENT
+            || currentToken.type == TokenType.AND
         ) {
             String operator = currentToken.value;
             eat();
-            node = new ArithmeticBinaryExpressionNode(node, operator, parseUnaryExpression());
+            node = new BinaryExpressionNode(node, operator, parseUnaryExpression());
         }
         return node;
     }
 
     ExpressionNode parseAdditiveExpression() throws IOException {
-        ExpressionNode node = parseMultiplicativeExpression();
+        ExpressionNode node = null;
+        if (currentToken.type == TokenType.PLUS || currentToken.type == TokenType.MINUS) {
+            String operator = currentToken.value;
+            eat();
+            node = new UnaryExpressionNode(
+                operator, parseMultiplicativeExpression()
+            );
+        } else {
+            node = parseMultiplicativeExpression();
+        }
         while (
             currentToken.type == TokenType.PLUS
             || currentToken.type == TokenType.MINUS
+            || currentToken.type == TokenType.OR
         ) {
             String operator = currentToken.value;
             eat();
-            node = new ArithmeticBinaryExpressionNode(node, operator, parseMultiplicativeExpression());
+            node = new BinaryExpressionNode(
+                node, operator, parseMultiplicativeExpression()
+            );
         }
         return node;
     }
@@ -811,190 +734,88 @@ class Parser {
     ExpressionNode parseRelationalExpression() throws IOException {
         ExpressionNode node = parseAdditiveExpression();
         while (
-            currentToken.type == TokenType.SMALLER
+            currentToken.type == TokenType.DIFFERENT
+            || currentToken.type == TokenType.EQUAL
+            || currentToken.type == TokenType.SMALLER
             || currentToken.type == TokenType.GREATER
             || currentToken.type == TokenType.SMALLER_OR_EQUAL
             || currentToken.type == TokenType.GREATER_OR_EQUAL
         ) {
             String operator = currentToken.value;
             eat();
-            node = new BooleanBinaryExpressionNode(node, operator, parseAdditiveExpression());
-        }
-        return node;
-    }
-
-    ExpressionNode parseEqualityExpression() throws IOException {
-        ExpressionNode node = parseRelationalExpression();
-        while (
-            currentToken.type == TokenType.EQUAL
-            || currentToken.type == TokenType.DIFFERENT
-        ) {
-            String operator = currentToken.value;
-            eat();
-            node = new BooleanBinaryExpressionNode(node, operator, parseRelationalExpression());
-        }
-        return node;
-    }
-
-    ExpressionNode parseAndExpression() throws IOException {
-        ExpressionNode node = parseEqualityExpression();
-        while (currentToken.type == TokenType.AND) {
-            String operator = currentToken.value;
-            eat();
-            node = new BooleanBinaryExpressionNode(node, operator, parseEqualityExpression());
-        }
-        return node;
-    }
-
-    ExpressionNode parseOrExpression() throws IOException {
-        ExpressionNode node = parseAndExpression();
-        while (currentToken.type == TokenType.OR) {
-            String operator = currentToken.value;
-            eat();
-            node = new BooleanBinaryExpressionNode(node, operator, parseAndExpression());
-        }
-        return node;
-    }
-
-    ExpressionNode parseAssignmentExpression() throws IOException {
-        ExpressionNode node = parseOrExpression();
-        switch (currentToken.type) {
-            case ASSIGN:
-                eat();
-                ExpressionNode value = parseOrExpression();
-                if (node.getClass().equals(IdentifierExpressionNode.class)) {
-                    IdentifierExpressionNode identifier = (IdentifierExpressionNode) node;
-                    node = new IdentifierAssignExpressionNode(identifier, value);
-                } else {
-                    ArraySubscriptExpressionNode subscript = (ArraySubscriptExpressionNode) node;
-                    node = new ArraySubscriptAssignExpressionNode(subscript, value);
-                }
-                break;
+            node = new BinaryExpressionNode(node, operator, parseAdditiveExpression());
         }
         return node;
     }
 
     ExpressionNode parseExpression() throws IOException {
-        ExpressionNode node = parseAssignmentExpression();
+        ExpressionNode node = parseRelationalExpression();
         System.out.println(node.getClass().getName());
         return node;
     }
 
-    // ExpressionNode parseExpression() throws IOException {
-    //     ExpressionNode node = null;
-    //     switch (currentToken.type) {
-    //         case TRUE:
-    //         case FALSE:
-    //             node = new BooleanExpressionNode(currentToken.type == TokenType.TRUE);
-    //             eat();
-    //             break;
-
-    //         case CHAR:
-    //             node = new CharExpressionNode(currentToken.value.charAt(0));
-    //             eat();
-    //             break;
-
-    //         case INTEGER:
-    //             node = new IntExpressionNode(Integer.parseInt(currentToken.value));
-    //             eat();
-    //             break;
-
-    //         case HEX_INTEGER:
-    //             String hexStr = currentToken.value.substring(1, 3);
-    //             node = new IntExpressionNode(Integer.parseInt(hexStr, 16));
-    //             eat();
-    //             break;
-
-    //         case STRING:
-    //             node = new StringExpressionNode(currentToken.value);
-    //             eat();
-    //             break;
-
-    //         case LEFT_PAREN:
-    //             eat();
-    //             node = new ParenthesizedExpressionNode(parseExpression());
-    //             eat(TokenType.RIGHT_PAREN);
-    //             break;
-
-    //         case PLUS:
-    //         case MINUS:
-    //         case NOT:
-    //             eat();
-    //             node = new ParenthesizedExpressionNode(parseExpression());
-    //             eat(TokenType.RIGHT_PAREN);
-    //             break;
-
-    //         case IDENTIFIER:
-    //             ExpressionNode subscriptExpr = null, value = null;
-    //             String identifier = currentToken.value;
-    //             eat();
-
-    //             if (currentToken.type == TokenType.LEFT_BRACKET) {
-    //                 eat(TokenType.LEFT_BRACKET);
-    //                 subscriptExpr = parseExpression();
-    //                 eat(TokenType.RIGHT_BRACKET);
-    //             }
-
-    //             if (currentToken.type == TokenType.ASSIGN) {
-    //                 eat(TokenType.ASSIGN);
-    //                 value = parseExpression();
-    //             }
-
-    //             if (subscriptExpr == null && value == null) {
-    //                 node = new IdentifierExpressionNode(identifier);
-    //             } else if (subscriptExpr == null) {
-    //                 node = new IdentifierAssignExpressionNode(identifier, value);
-    //             } else if (value == null) {
-    //                 node = new ArraySubscriptExpressionNode(identifier, subscriptExpr);
-    //             } else {
-    //                 node = new ArraySubscriptAssignExpressionNode(identifier, subscriptExpr, value);
-    //             }
-    //             break;
-
-    //         default: tokenNotExpected(); break;
-    //     }
-    //     return node;
-    // }
-
     VarDeclStatementNode parseVarDecl() throws IOException {
         String identifier = currentToken.value;
-        int size = -1;
-        ExpressionNode expression = null;
+        ExpressionNode sizeExpression = null;
+        ExpressionNode valueExpression = null;
         eat(TokenType.IDENTIFIER);
 
         if (currentToken.type == TokenType.LEFT_BRACKET) {
             eat();
-            switch (currentToken.type) {
-                case INTEGER:
-                    size = Integer.parseInt(currentToken.value);
-                    eat();
-                    break;
-    
-                case HEX_INTEGER:
-                    String hexStr = currentToken.value.substring(1, 3);
-                    size = Integer.parseInt(hexStr, 16);
-                    eat();
-                    break;
-    
-                default: tokenNotExpected(); break;
-            }
+            sizeExpression = parseExpression();
             eat(TokenType.RIGHT_BRACKET);
         }
 
-        if (currentToken.type == TokenType.ASSIGN) {
+        else if (currentToken.type == TokenType.ASSIGN) {
             eat(TokenType.ASSIGN);
-            expression = parseExpression();
+            valueExpression = parseExpression();
         }
 
-        return new VarDeclStatementNode(identifier, size, expression);
+        return new VarDeclStatementNode(identifier, sizeExpression, valueExpression);
     }
 
-    VarsDeclStatementNode parseVarsDecl() throws IOException {
-        VarsDeclStatementNode node = new VarsDeclStatementNode();
+    VarDeclsStatementNode parseVarDecls() throws IOException {
+        VarDeclsStatementNode node = new VarDeclsStatementNode();
         node.varsDecl.add(parseVarDecl());
         while (currentToken.type == TokenType.COMMA) {
             eat();
             node.varsDecl.add(parseVarDecl());
+        }
+        System.out.println(node.getClass().getName());
+        return node;
+    }
+
+    ConstDeclStatementNode parseConstDecl() throws IOException {
+        String identifier = currentToken.value;
+        ExpressionNode sizeExpression = null;
+        ExpressionNode valueExpression = null;
+        eat(TokenType.IDENTIFIER);
+
+        if (
+            currentToken.type != TokenType.LEFT_BRACKET
+            && currentToken.type != TokenType.EQUAL
+        ) tokenNotExpected();
+
+        if (currentToken.type == TokenType.LEFT_BRACKET) {
+            eat();
+            sizeExpression = parseExpression();
+            eat(TokenType.RIGHT_BRACKET);
+        }
+
+        else if (currentToken.type == TokenType.EQUAL) {
+            eat();
+            valueExpression = parseExpression();
+        }
+
+        return new ConstDeclStatementNode(identifier, sizeExpression, valueExpression);
+    }
+
+    ConstDeclsStatementNode parseConstDecls() throws IOException {
+        ConstDeclsStatementNode node = new ConstDeclsStatementNode();
+        node.constDecls.add(parseConstDecl());
+        while (currentToken.type == TokenType.COMMA) {
+            eat();
+            node.constDecls.add(parseConstDecl());
         }
         System.out.println(node.getClass().getName());
         return node;
@@ -1040,7 +861,7 @@ class Parser {
         String identifier = currentToken.value;
         eat(TokenType.IDENTIFIER);
         if (currentToken.type == TokenType.LEFT_BRACKET) {
-            eat(TokenType.LEFT_BRACKET);
+            eat();
             ExpressionNode expression = parseExpression();
             node = new ReadlnArrayStatementNode(identifier, expression);
             eat(TokenType.RIGHT_BRACKET);
@@ -1073,17 +894,52 @@ class Parser {
         return node;
     }
 
+    AssignStatementNode parseAssignStatement() throws IOException {
+        AssignStatementNode node;
+        ExpressionNode subscriptExpr = null;
+        String identifier = currentToken.value;
+        eat();
+
+        if (currentToken.type == TokenType.LEFT_BRACKET) {
+            eat(TokenType.LEFT_BRACKET);
+            subscriptExpr = parseExpression();
+            eat(TokenType.RIGHT_BRACKET);
+        }
+
+        eat(TokenType.ASSIGN);
+
+        if (subscriptExpr == null) {
+            node = new IdentifierAssignStatementNode(identifier, parseExpression());
+        } else {
+            node = new ArraySubscriptAssignStatementNode(
+                identifier, subscriptExpr, parseExpression()
+            );
+        }
+        return node;
+    }
+
+    AssignStatementsNode parseAssignStatements() throws IOException {
+        AssignStatementsNode node = new AssignStatementsNode();
+        node.stmts.add(parseAssignStatement());
+        while (currentToken.type == TokenType.COMMA) {
+            eat();
+            node.stmts.add(parseAssignStatement());
+        }
+        return node;
+    }
+
     ForStatementNode parseForStatement() throws IOException {
         eat(TokenType.LEFT_PAREN);
-        ExpressionNode init = null, condition = null, inc = null;
+        AssignStatementsNode init = null, inc = null;
+        ExpressionNode condition = null;
 
-        if (currentToken.type != TokenType.SEMICOLON) init = parseExpression();
+        if (currentToken.type != TokenType.SEMICOLON) init = parseAssignStatements();
         eat(TokenType.SEMICOLON);
-        
+
         if (currentToken.type != TokenType.SEMICOLON) condition = parseExpression();
         eat(TokenType.SEMICOLON);
-        
-        if (currentToken.type != TokenType.SEMICOLON) inc = parseExpression();
+
+        if (currentToken.type != TokenType.SEMICOLON) inc = parseAssignStatements();
 
         eat(TokenType.RIGHT_PAREN);
         ForStatementNode node = new ForStatementNode(init, condition, inc, parseStatement());
@@ -1118,12 +974,22 @@ class Parser {
                 node = parseReturnStatement();
                 break;
 
+            case IDENTIFIER:
+                node = parseAssignStatements();
+                eat(TokenType.SEMICOLON);
+                break;
+
             case INT:
             case CHAR:
             case BOOLEAN:
+                eat();
+                node = parseVarDecls();
+                eat(TokenType.SEMICOLON);
+                break;
+
             case FINAL:
                 eat();
-                node = parseVarsDecl();
+                node = parseConstDecls();
                 eat(TokenType.SEMICOLON);
                 break;
 
@@ -1154,12 +1020,20 @@ class Parser {
             || currentToken.type == TokenType.BOOLEAN
             || currentToken.type == TokenType.FINAL
         ) {
-            eat();
-            node.varsDecl = parseVarsDecl();
+            if (currentToken.type == TokenType.FINAL) {
+                eat();
+                node.constDecls.add(parseConstDecls());
+            } else {
+                eat();
+                node.varDecls.add(parseVarDecls());
+            }
             eat(TokenType.SEMICOLON);
         }
         eat(TokenType.MAIN);
-        node.stmt = parseStatement();
+        eat(TokenType.LEFT_BRACES);
+        while (currentToken.type != TokenType.RIGHT_BRACES)
+            node.stmts.add(parseStatement());
+        eat(TokenType.RIGHT_BRACES);
         eat(TokenType.EOF);
         System.out.println(node.getClass().getName());
         return node;
