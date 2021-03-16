@@ -1,5 +1,6 @@
 import java.io.IOException;
 import java.io.PushbackReader;
+import java.util.ArrayList;
 import java.util.HashMap;
 
 enum TokenType {
@@ -700,6 +701,65 @@ class Parser {
     void eat(TokenType type) throws IOException {
         if (currentToken.type == type) eat();
         else tokenNotExpected();
+    }
+
+    ExpressionNode parsePrimaryExpression() throws IOException {
+        ExpressionNode node = null;
+        switch (currentToken.type) {
+            case TRUE:
+            case FALSE:
+                node = new BooleanExpressionNode(currentToken.type == TokenType.TRUE);
+                eat();
+                break;
+
+            case CHAR:
+                node = new CharExpressionNode(currentToken.value.charAt(0));
+                eat();
+                break;
+
+            case INTEGER:
+                node = new IntExpressionNode(Integer.parseInt(currentToken.value));
+                eat();
+                break;
+
+            case HEX_INTEGER:
+                String hexStr = currentToken.value.substring(1, 3);
+                node = new IntExpressionNode(Integer.parseInt(hexStr, 16));
+                eat();
+                break;
+
+            case STRING:
+                node = new StringExpressionNode(currentToken.value);
+                eat();
+                break;
+
+            case LEFT_PAREN:
+                eat();
+                node = new ParenthesizedExpressionNode(parseExpression());
+                eat(TokenType.RIGHT_PAREN);
+                break;
+
+            case IDENTIFIER:
+                ExpressionNode subscriptExpr = null;
+                String identifier = currentToken.value;
+                eat();
+
+                if (currentToken.type == TokenType.LEFT_BRACKET) {
+                    eat(TokenType.LEFT_BRACKET);
+                    subscriptExpr = parseExpression();
+                    eat(TokenType.RIGHT_BRACKET);
+                }
+
+                if (subscriptExpr == null) {
+                    node = new IdentifierExpressionNode(identifier);
+                } else {
+                    node = new ArraySubscriptExpressionNode(identifier, subscriptExpr);
+                }
+                break;
+
+            default: tokenNotExpected(); break;
+        }
+        return node;
     }
 
 }
