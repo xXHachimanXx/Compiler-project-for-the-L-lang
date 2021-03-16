@@ -1057,5 +1057,20 @@ class Parser {
         return node;
     }
 
+    IfStatementNode parseIfStatement() throws IOException {
+        eat(TokenType.LEFT_PAREN);
+        ExpressionNode expression = parseExpression();
+        eat(TokenType.RIGHT_PAREN);
+        eat(TokenType.THEN);
+        StatementNode ifStatement = parseStatement();
+        StatementNode elseStatement = null;
+        if (currentToken.type == TokenType.ELSE) {
+            eat();
+            elseStatement = parseStatement();
+        }
+        IfStatementNode node = new IfStatementNode(expression, ifStatement, elseStatement);
+        return node;
+    }
+
 }
 
