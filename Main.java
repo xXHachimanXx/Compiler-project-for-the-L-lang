@@ -807,5 +807,20 @@ class Parser {
         return node;
     }
 
+    ExpressionNode parseRelationalExpression() throws IOException {
+        ExpressionNode node = parseAdditiveExpression();
+        while (
+            currentToken.type == TokenType.SMALLER
+            || currentToken.type == TokenType.GREATER
+            || currentToken.type == TokenType.SMALLER_OR_EQUAL
+            || currentToken.type == TokenType.GREATER_OR_EQUAL
+        ) {
+            String operator = currentToken.value;
+            eat();
+            node = new BooleanBinaryExpressionNode(node, operator, parseAdditiveExpression());
+        }
+        return node;
+    }
+
 }
 
