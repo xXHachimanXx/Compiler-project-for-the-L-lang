@@ -384,5 +384,292 @@ enum ASTNodeType {
     ARRAY_SUBSCRIPT_ASSIGN_EXPRESSION,
 }
 
+abstract class Node {
+    ASTNodeType type;
+    Node(ASTNodeType type) {
+        this.type = type;
+    }
+}
+
+abstract class StatementNode extends Node {
+    StatementNode(ASTNodeType type) {
+        super(type);
+    }
+}
+
+abstract class ExpressionNode extends Node {
+    ExpressionNode(ASTNodeType type) {
+        super(type);
+    }
+}
+
+class BooleanExpressionNode extends ExpressionNode {
+    boolean value;
+    BooleanExpressionNode(boolean value) {
+        super(ASTNodeType.BOOLEAN_EXPRESSION);
+        this.value = value;
+    }
+}
+
+class IntExpressionNode extends ExpressionNode {
+    int value;
+    IntExpressionNode(int value) {
+        super(ASTNodeType.INT_EXPRESSION);
+        this.value = value;
+    }
+}
+
+class CharExpressionNode extends ExpressionNode {
+    char value;
+    CharExpressionNode(char value) {
+        super(ASTNodeType.CHAR_EXPRESSION);
+        this.value = value;
+    }
+}
+
+class StringExpressionNode extends ExpressionNode {
+    String value;
+    StringExpressionNode(String value) {
+        super(ASTNodeType.STRING_EXPRESSION);
+        this.value = value;
+    }
+}
+
+class ParenthesizedExpressionNode extends ExpressionNode {
+    ExpressionNode expression;
+    ParenthesizedExpressionNode(ExpressionNode expression) {
+        super(ASTNodeType.PARENTHESIZED_EXPRESSION);
+        this.expression = expression;
+    }
+}
+
+class AssignmentBinaryExpressionNode extends ExpressionNode {
+    ExpressionNode leftExpression;
+    String operator;
+    ExpressionNode rightExpression;
+    AssignmentBinaryExpressionNode(
+        ExpressionNode leftExpression, String operator, ExpressionNode rightExpression
+    ) {
+        super(ASTNodeType.ASSIGNMENT_BINARY_EXPRESSION);
+        this.leftExpression = leftExpression;
+        this.operator = operator;
+        this.rightExpression = rightExpression;
+    }
+}
+
+class ArithmeticUnaryExpressionNode extends ExpressionNode {
+    String operator;
+    ExpressionNode expression;
+    ArithmeticUnaryExpressionNode(String operator, ExpressionNode expression) {
+        super(ASTNodeType.ARITHMETIC_UNARY_EXPRESSION);
+        this.operator = operator;
+        this.expression = expression;
+    }
+}
+
+class ArithmeticBinaryExpressionNode extends ExpressionNode {
+    ExpressionNode leftExpression;
+    String operator;
+    ExpressionNode rightExpression;
+    ArithmeticBinaryExpressionNode(
+        ExpressionNode leftExpression, String operator, ExpressionNode rightExpression
+    ) {
+        super(ASTNodeType.ARITHMETIC_BINARY_EXPRESSION);
+        this.leftExpression = leftExpression;
+        this.operator = operator;
+        this.rightExpression = rightExpression;
+    }
+}
+
+class BooleanUnaryExpressionNode extends ExpressionNode {
+    String operator;
+    ExpressionNode expression;
+    BooleanUnaryExpressionNode(String operator, ExpressionNode expression) {
+        super(ASTNodeType.BOOLEAN_UNARY_EXPRESSION);
+        this.operator = operator;
+        this.expression = expression;
+    }
+}
+
+class BooleanBinaryExpressionNode extends ExpressionNode {
+    ExpressionNode leftExpression;
+    String operator;
+    ExpressionNode rightExpression;
+    BooleanBinaryExpressionNode(
+        ExpressionNode leftExpression, String operator, ExpressionNode rightExpression
+    ) {
+        super(ASTNodeType.BOOLEAN_BINARY_EXPRESSION);
+        this.leftExpression = leftExpression;
+        this.operator = operator;
+        this.rightExpression = rightExpression;
+    }
+}
+
+class IdentifierExpressionNode extends ExpressionNode {
+    String identifier;
+    IdentifierExpressionNode(String identifier) {
+        super(ASTNodeType.IDENTIFIER_EXPRESSION);
+        this.identifier = identifier;
+    }
+}
+
+class IdentifierAssignExpressionNode extends ExpressionNode {
+    IdentifierExpressionNode identifier;
+    ExpressionNode value;
+    IdentifierAssignExpressionNode(
+        IdentifierExpressionNode identifier, ExpressionNode value
+    ) {
+        super(ASTNodeType.IDENTIFIER_ASSIGN_EXPRESSION);
+        this.identifier = identifier;
+        this.value = value;
+    }
+}
+
+class ArraySubscriptExpressionNode extends ExpressionNode {
+    String identifier;
+    ExpressionNode subscriptExpr;
+    ArraySubscriptExpressionNode(String identifier, ExpressionNode subscriptExpr) {
+        super(ASTNodeType.ARRAY_SUBSCRIPT_EXPRESSION);
+        this.identifier = identifier;
+        this.subscriptExpr = subscriptExpr;
+    }
+}
+
+class ArraySubscriptAssignExpressionNode extends ExpressionNode {
+    ArraySubscriptExpressionNode subscript;
+    ExpressionNode value;
+    ArraySubscriptAssignExpressionNode(
+        ArraySubscriptExpressionNode subscript, ExpressionNode value
+    ) {
+        super(ASTNodeType.ARRAY_SUBSCRIPT_ASSIGN_EXPRESSION);
+        this.subscript = subscript;
+        this.value = value;
+    }
+}
+
+class VarDeclStatementNode extends StatementNode {
+    String identifier;
+    int size;
+    ExpressionNode expression;
+    VarDeclStatementNode(
+        String identifier,
+        int size,
+        ExpressionNode expression
+    ) {
+        super(ASTNodeType.VAR_DECL_STATEMENT);
+        this.identifier = identifier;
+        this.size = size;
+        this.expression = expression;
+    }
+}
+
+class VarsDeclStatementNode extends StatementNode {
+    ArrayList<VarDeclStatementNode> varsDecl = new ArrayList<>();
+    VarsDeclStatementNode() {
+        super(ASTNodeType.VARS_DECL_STATEMENT);
+    }
+}
+
+class CompoundStatementNode extends StatementNode {
+    ArrayList<StatementNode> stmts = new ArrayList<>();
+    CompoundStatementNode() {
+        super(ASTNodeType.COMPOUND_STATEMENT);
+    }
+}
+
+class ExpressionStatementNode extends StatementNode {
+    ExpressionNode expression;
+    ExpressionStatementNode(ExpressionNode expression) {
+        super(ASTNodeType.EXPRESSION_STATEMENT);
+    }
+}
+
+class WriteStatementNode extends StatementNode {
+    ArrayList<ExpressionNode> args = new ArrayList<>();
+    WriteStatementNode() {
+        super(ASTNodeType.WRITE_STATEMENT);
+    }
+}
+
+class WritelnStatementNode extends StatementNode {
+    ArrayList<ExpressionNode> args = new ArrayList<>();
+    WritelnStatementNode() {
+        super(ASTNodeType.WRITELN_STATEMENT);
+    }
+}
+
+abstract class ReadlnStatementNode extends StatementNode {
+    ReadlnStatementNode(ASTNodeType type) {
+        super(type);
+    }
+}
+
+class ReadlnVarStatementNode extends ReadlnStatementNode {
+    String identifier;
+    ReadlnVarStatementNode(String identifier) {
+        super(ASTNodeType.READLN_VAR_STATEMENT);
+        this.identifier = identifier;
+    }
+}
+
+class ReadlnArrayStatementNode extends ReadlnStatementNode {
+    String identifier;
+    ExpressionNode expression;
+    ReadlnArrayStatementNode(String identifier, ExpressionNode expression) {
+        super(ASTNodeType.READLN_VAR_STATEMENT);
+        this.identifier = identifier;
+        this.expression = expression;
+    }
+}
+
+class ReturnStatementNode extends StatementNode {
+    ExpressionNode expression;
+    ReturnStatementNode(ExpressionNode expression) {
+        super(ASTNodeType.RETURN_STATEMENT);
+        this.expression = expression;
+    }
+}
+
+class IfStatementNode extends StatementNode {
+    ExpressionNode expression;
+    StatementNode ifStatement;
+    StatementNode elseStatement;
+    IfStatementNode(
+        ExpressionNode expression,
+        StatementNode ifStatement,
+        StatementNode elseStatement
+    ) {
+        super(ASTNodeType.IF_STATEMENT);
+        this.expression = expression;
+        this.ifStatement = ifStatement;
+        this.elseStatement = elseStatement;
+    }
+}
+
+class ForStatementNode extends StatementNode {
+    ExpressionNode init;
+    ExpressionNode condition;
+    ExpressionNode inc;
+    StatementNode stmt;
+    ForStatementNode(
+        ExpressionNode init,
+        ExpressionNode condition,
+        ExpressionNode inc,
+        StatementNode stmt
+    ) {
+        super(ASTNodeType.FOR_STATEMENT);
+        this.init = init;
+        this.condition = condition;
+        this.inc = inc;
+        this.stmt = stmt;
+    }
+}
+
+class ProgramNode extends Node {
+    VarsDeclStatementNode varsDecl;
+    StatementNode stmt;
+    ProgramNode() {
+        super(ASTNodeType.PROGRAM);
+    }
 }
 
