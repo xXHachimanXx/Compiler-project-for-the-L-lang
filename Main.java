@@ -988,5 +988,16 @@ class Parser {
         return new VarDeclStatementNode(identifier, size, expression);
     }
 
+    VarsDeclStatementNode parseVarsDecl() throws IOException {
+        VarsDeclStatementNode node = new VarsDeclStatementNode();
+        node.varsDecl.add(parseVarDecl());
+        while (currentToken.type == TokenType.COMMA) {
+            eat();
+            node.varsDecl.add(parseVarDecl());
+        }
+        System.out.println(node.getClass().getName());
+        return node;
+    }
+
 }
 
