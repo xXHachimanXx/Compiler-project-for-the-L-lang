@@ -294,5 +294,66 @@ class Lexer {
         return c;
     }
 
+    Token next() throws IOException {
+        char c = (char) reader.read();
+        c = skipSpacesAndComments(c);
+        if (c == (char) -1) return new Token(TokenType.EOF, (char) -1);
+        if (c == ',') return new Token(TokenType.COMMA, ',');
+        if (c == ';') return new Token(TokenType.SEMICOLON, ';');
+        if (c == '+') return new Token(TokenType.PLUS, '+');
+        if (c == '-') return new Token(TokenType.MINUS, '-');
+        if (c == '*') return new Token(TokenType.ASTERISK, '*');
+        if (c == '/') return new Token(TokenType.BACKSLASH, '/');
+        if (c == '(') return new Token(TokenType.LEFT_PAREN, '(');
+        if (c == ')') return new Token(TokenType.RIGHT_PAREN, ')');
+        if (c == '[') return new Token(TokenType.LEFT_BRACKET, '[');
+        if (c == ']') return new Token(TokenType.RIGHT_BRACKET, ']');
+        if (c == '{') return new Token(TokenType.LEFT_BRACES, '{');
+        if (c == '}') return new Token(TokenType.RIGHT_BRACES, '}');
+        if (c == '%') return new Token(TokenType.PERCENT, '%');
+        if (c == '=') return new Token(TokenType.EQUAL, '=');
+        if (c == '"') return readString();
+        if (c == '\'') return readChar();
+        if (c >= '0' && c <= '9') return readInteger(c);
+        if ((c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || c == '_')
+            return readIdentifier(c);
+        if (c == '<')
+        {
+            char c2 = (char) reader.read();
+            if (c2 == '>') return new Token(TokenType.DIFFERENT, "<>");
+            else if (c2 == '=') return new Token(TokenType.SMALLER_OR_EQUAL, "<=");
+            else {
+                reader.unread(c2);
+                return new Token(TokenType.SMALLER, '<');
+            }
+        }
+        if (c == '>')
+        {
+            char c2 = (char) reader.read();
+            if (c2 == '=') return new Token(TokenType.GREATER_OR_EQUAL, ">=");
+            else {
+                reader.unread(c2);
+                return new Token(TokenType.GREATER, ">");
+            }
+        }
+        if (c == ':')
+        {
+            char c2 = (char) reader.read();
+            if (c2 == -1) {
+                System.out.printf("%d\nfim de arquivo nao esperado.\n", line);
+                System.exit(0);
+            }
+            else if (c2 != '=') {
+                System.out.printf("%d\nlexema nao identificado [:%c].\n", line, c2);
+                System.exit(0);
+            } else return new Token(TokenType.ASSIGN, ":=");
+        }
+
+        System.out.printf("%d\ncaractere invalido.\n", line);
+        System.exit(0);
+        return new Token(TokenType.EOF, "");
+    }
+}
+
 }
 
