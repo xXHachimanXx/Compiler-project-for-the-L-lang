@@ -173,5 +173,18 @@ class Lexer {
         else return new Token(TokenType.IDENTIFIER, str);
     }
 
+    boolean isSpace(char c) {
+        return c == ' ' || c == '\t' || c == '\r' || c == '\n';
+    }
+
+    char skipSpaces() throws IOException {
+        char c = (char) reader.read();
+        while (isSpace(c)) {
+            if (c == '\n') line++;
+            c = (char) reader.read();
+        }
+        return c;
+    }
+
 }
 
