@@ -1072,5 +1072,20 @@ class Parser {
         return node;
     }
 
+    ForStatementNode parseForStatement() throws IOException {
+        eat(TokenType.LEFT_PAREN);
+        ExpressionNode init = null, condition = null, inc = null;
+
+        if (currentToken.type != TokenType.SEMICOLON) init = parseExpression();
+        eat(TokenType.SEMICOLON);
+        
+        if (currentToken.type != TokenType.SEMICOLON) condition = parseExpression();
+        eat(TokenType.SEMICOLON);
+        
+        if (currentToken.type != TokenType.SEMICOLON) inc = parseExpression();
+
+        eat(TokenType.RIGHT_PAREN);
+        ForStatementNode node = new ForStatementNode(init, condition, inc, parseStatement());
+        return node;
 }
 
