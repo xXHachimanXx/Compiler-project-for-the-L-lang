@@ -246,7 +246,7 @@ class Lexer {
     void skipSingleLineComment() throws IOException {
         char c;
         do { c = (char) reader.read(); }
-        while (c != '\n' && c != -1);
+        while (c != '\n' && c != (char) -1);
         if (c == '\n') line++;
     }
 
@@ -256,7 +256,7 @@ class Lexer {
             do {
                 c = (char) reader.read();
                 if (c == '\n') line++;
-            } while (c != '*' && c != -1);
+            } while (c != '*' && c != (char) -1);
 
             if (c == -1) {
                 System.out.printf("%d\nfim de arquivo nao esperado.\n", line);
