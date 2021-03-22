@@ -211,7 +211,7 @@ class Lexer {
         String str = "";
         char c = (char) reader.read();
         while (c != '"') {
-            if (c == -1) {
+            if (c == (char) -1) {
                 System.out.printf("%d\nfim de arquivo nao esperado.\n", line);
                 System.exit(0);
             }
@@ -224,14 +224,14 @@ class Lexer {
 
     Token readChar() throws IOException {
         char c = (char) reader.read();
-        if (c == -1) {
+        if (c == (char) -1) {
             System.out.printf("%d\nfim de arquivo nao esperado.\n", line);
             System.exit(0);
         }
         assertValidChar(c);
 
         char apostrophe = (char) reader.read();
-        if (apostrophe == -1) {
+        if (apostrophe == (char) -1) {
             System.out.printf("%d\nfim de arquivo nao esperado.\n", line);
             System.exit(0);
         }
@@ -259,7 +259,7 @@ class Lexer {
                 if (c == '\n') line++;
             } while (c != '*' && c != (char) -1);
 
-            if (c == -1) {
+            if (c == (char) -1) {
                 System.out.printf("%d\nfim de arquivo nao esperado.\n", line);
                 System.exit(0);
             }
@@ -268,7 +268,7 @@ class Lexer {
             while (c == '*');
 
             if (c == '\n') line++;
-            else if (c == -1) {
+            else if (c == (char) -1) {
                 System.out.printf("%d\nfim de arquivo nao esperado.\n", line);
                 System.exit(0);
             }
@@ -342,7 +342,7 @@ class Lexer {
         if (c == ':')
         {
             char c2 = (char) reader.read();
-            if (c2 == -1) {
+            if (c2 == (char) -1) {
                 System.out.printf("%d\nfim de arquivo nao esperado.\n", line);
                 System.exit(0);
             }
