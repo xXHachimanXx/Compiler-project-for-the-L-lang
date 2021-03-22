@@ -61,6 +61,22 @@ RELATIONAL_EXPRESSION ::= ADDITIVE_EXPRESSION (('=' | '<>' | '<' | '>' | '<=' | 
 EXPRESSION ::= RELATIONAL_EXPRESSION
 ```
 
+Running on Linux:
+
+```
+javac Main.java
+java Main < exemplo1.l > exemplo1.asm
+rm *.class
+```
+
+Running on Windows:
+
+```
+javac Main.java
+java Main < exemplo1.l > exemplo1.asm
+del *.class
+```
+
 References:
 
 - [Draw railroad diagrams for BNF grammars](https://www.bottlecaps.de/rr/ui)
