@@ -64,17 +64,7 @@ EXPRESSION ::= RELATIONAL_EXPRESSION
 Running on Linux:
 
 ```
-javac Main.java
-java Main < exemplo1.l > exemplo1.asm
-rm *.class
-```
-
-Running on Windows:
-
-```
-javac Main.java
-java Main < exemplo1.l > exemplo1.asm
-del *.class
+javac Main.java && java Main < exemplo1.l > exemplo1.asm; rm *.class
 ```
 
 References:
