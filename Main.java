@@ -2,6 +2,7 @@ import java.io.IOException;
 import java.io.PushbackReader;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.io.InputStreamReader;
 
 enum TokenType {
@@ -934,7 +935,7 @@ class Parser {
         if (currentToken.type != TokenType.SEMICOLON) init = parseAssignStatements();
         eat(TokenType.SEMICOLON);
 
-        if (currentToken.type != TokenType.SEMICOLON) condition = parseExpression();
+        condition = parseExpression();
         eat(TokenType.SEMICOLON);
 
         if (currentToken.type != TokenType.SEMICOLON) inc = parseAssignStatements();
@@ -1038,6 +1039,86 @@ class Parser {
     }
 }
 
+class CodeGenerator {
+    int varCounter = 0;
+    int stackSize = 0;
+    List<String> dataSection = new ArrayList<>();
+    List<String> codeSection = new ArrayList<>();
+
+    private void addData(String line, int size) {
+        dataSection.add(line);
+        stackSize += size;
+    }
+
+    private void addCode(String line) {
+        codeSection.add(line);
+    }
+
+    public void generate(WriteStatementNode node) {
+        String str = "";
+        for (ExpressionNode arg : node.args) {
+            Class<?> argClass = arg.getClass();
+            if (argClass.equals(StringExpressionNode.class)) {
+                StringExpressionNode aux = (StringExpressionNode) arg;
+                str += aux.value;
+            } else if (argClass.equals(IntExpressionNode.class)) {
+                IntExpressionNode aux = (IntExpressionNode) arg;
+                str += aux.value;
+            }
+        }
+        addData(
+            String.format("var%d db \"%s\", '$'", varCounter, str),
+            str.getBytes().length + 1
+        );
+        addCode(String.format("print var%d", varCounter));
+        varCounter++;
+    }
+
+    public void generate(WritelnStatementNode node) {
+        WriteStatementNode auxNode = new WriteStatementNode();
+        auxNode.args = new ArrayList<>(node.args);
+        auxNode.args.add(new StringExpressionNode("\n"));
+    }
+
+    public void generate(StatementNode node) {
+        Class<?> nodeClass = node.getClass();
+        if (nodeClass.equals(WriteStatementNode.class))
+            generate((WriteStatementNode) node);
+    }
+
+    public void generate(ArrayList<StatementNode> nodes) {
+        for (StatementNode node : nodes) generate(node);
+    }
+
+    public String generate(ProgramNode node) {
+        generate(node.stmts);
+        String.join("\n", dataSection);
+        return String.format("""
+.model small
+.stack %d
+
+print macro msg
+    lea dx, msg
+    mov ah, 09h
+    int 21h
+endm
+
+.data
+%s
+
+.code
+    MOV AX, @DATA
+    MOV DS, AX
+
+    %s
+
+    MOV AH, 4CH ; Exit
+    INT 21H
+end
+""", stackSize, String.join("\n", dataSection), String.join("\n", codeSection));
+    }
+}
+
 public class Main {
     public static void main(String[] args) throws IOException {
         PushbackReader input = new PushbackReader(new InputStreamReader(System.in), 3);
@@ -1047,7 +1128,8 @@ public class Main {
         //     // System.out.printf("id = %s, lexem = '%s'\n", tok.type.name(), tok.value);
         //     tok = lexer.next();
         // }
-        new Parser(lexer).parseProgram();
+        ProgramNode node = new Parser(lexer).parseProgram();
+        System.out.printf(new CodeGenerator().generate(node));
         System.out.printf("%d linhas compiladas.\n", lexer.line);
     }
 }
