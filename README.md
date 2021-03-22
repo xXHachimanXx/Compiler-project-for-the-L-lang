@@ -10,17 +10,20 @@ STATEMENT ::=
     | ('write' | 'writeln') '(' EXPRESSION (',' EXPRESSION)* ')' ';'
     | 'readln' '(' IDENTIFIER ('[' EXPRESSION ']')? ')' ';'
     | 'if' '(' EXPRESSION ')' 'then' STATEMENT ('else' STATEMENT)?
-    | 'for' '(' ASSIGN_STATEMENTS? ';' EXPRESSION? ';' ASSIGN_STATEMENTS? ')' STATEMENT
-    | 'return' EXPRESSION ';'
+    | 'for' '(' ASSIGN_STATEMENTS? ';' EXPRESSION ';' ASSIGN_STATEMENTS? ')' STATEMENT
     | ASSIGN_STATEMENTS ';'
     | VAR_DECLS ';'
     | CONST_DECLS ';'
 
 CHARACTER ::= [a-zA-Z0-9_ .,;:(){}[=<>%+*/'"] | ']' | '-'
 
+CHARACTER_CONST ::= "'" CHARACTER "'"
+
 STRING ::= '"' CHARACTER* '"'
 
 INTEGER ::= [0-9]+
+
+BOOLEAN_CONST ::= 'TRUE' | 'FALSE'
 
 HEX_INTEGER ::= '0' [0-9ABCDEF] [0-9ABCDEF] 'h'
 
@@ -30,17 +33,17 @@ ASSIGN_STATEMENT ::= IDENTIFIER ('[' EXPRESSION ']')? ':=' EXPRESSION
 
 ASSIGN_STATEMENTS ::= ASSIGN_STATEMENT (',' ASSIGN_STATEMENT)*
 
-VAR_DECL ::= IDENTIFIER | ASSIGN_STATEMENT | IDENTIFIER '[' EXPRESSION ']'
+VAR_DECL ::= IDENTIFIER ('[' EXPRESSION ']' | ':=' EXPRESSION)?
 
 VAR_DECLS ::= ('int' | 'char' | 'boolean') VAR_DECL (',' VAR_DECL)*
 
-CONST_DECL ::= IDENTIFIER (('=' EXPRESSION) | ('[' EXPRESSION ']'))
+CONST_DECL ::= IDENTIFIER '=' EXPRESSION
 
 CONST_DECLS ::= 'final' CONST_DECL (',' CONST_DECL)*
 
 PRIMARY_EXPRESSION ::=
-    'TRUE' | 'FALSE'
-    | "'" CHARACTER "'"
+    | BOOLEAN_CONST
+    | CHARACTER_CONST
     | INTEGER
     | HEX_INTEGER
     | STRING
