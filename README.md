@@ -20,6 +20,7 @@ Inside DosBox run:
 
 ```
 mount c: /COMPLETE/PATH/TO/THE/8086/FOLDER/ON/YOUR/COMPUTER
+c:
 masm /L exemplo1.asm
 link exemplo1.obj
 exemplo1.exe
