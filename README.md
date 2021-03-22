@@ -1,6 +1,31 @@
 # Compiler-project-for-the-L-lang
 
-Language Grammar:
+This is a compiler for the L language, an artifical language of the Compilers discipline.
+
+Our generated assembly is compatible with the 8086 processor with registers of 16 bits.
+
+## Running the compiler
+
+Compiling the L language to .asm on Linux:
+
+```
+javac Main.java && java Main < exemplo1.l > exemplo1.asm; rm *.class
+```
+
+## Transforming the .asm file to an .exe file
+
+To test our .asm files, we used DosBox to emulate a 16 bit operational system like DOS.
+
+Inside DosBox run:
+
+```
+mount c: /COMPLETE/PATH/TO/THE/8086/FOLDER/ON/YOUR/COMPUTER
+masm /L exemplo1.asm
+link exemplo1.obj
+exemplo1.exe
+```
+
+## Language Grammar
 
 ```
 PROGRAM ::= ((VAR_DECLS | CONST_DECLS) ';')* 'main' '{' STATEMENT* '}'
@@ -61,13 +86,7 @@ RELATIONAL_EXPRESSION ::= ADDITIVE_EXPRESSION (('=' | '<>' | '<' | '>' | '<=' | 
 EXPRESSION ::= RELATIONAL_EXPRESSION
 ```
 
-Running on Linux:
-
-```
-javac Main.java && java Main < exemplo1.l > exemplo1.asm; rm *.class
-```
-
-References:
+## References
 
 - [Draw railroad diagrams for BNF grammars](https://www.bottlecaps.de/rr/ui)
 - [Writing a programming language - the Lexer](https://www.youtube.com/watch?v=TG0qRDrUPpA)
