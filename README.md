@@ -29,17 +29,17 @@ exemplo1.exe
 ## Language Grammar
 
 ```
-PROGRAM ::= ((VAR_DECLS | CONST_DECLS) ';')* 'main' '{' STATEMENT* '}'
+PROGRAM ::= ((VAR_DECLS | CONST_DECLS) ';')* 'main' '{' (STATEMENT ';')* '}'
 
 STATEMENT ::=
-    '{' STATEMENT* '}'
-    | ('write' | 'writeln') '(' EXPRESSION (',' EXPRESSION)* ')' ';'
-    | 'readln' '(' IDENTIFIER ('[' EXPRESSION ']')? ')' ';'
-    | 'if' '(' EXPRESSION ')' 'then' STATEMENT ('else' STATEMENT)?
-    | 'for' '(' ASSIGN_STATEMENTS? ';' EXPRESSION ';' ASSIGN_STATEMENTS? ')' STATEMENT
-    | ASSIGN_STATEMENTS ';'
-    | VAR_DECLS ';'
-    | CONST_DECLS ';'
+    ('write' | 'writeln') '(' EXPRESSION (',' EXPRESSION)* ')'
+    | 'readln' '(' IDENTIFIER ('[' EXPRESSION ']')? ')'
+    | 'if' '(' EXPRESSION ')' 'then' STATEMENT_OR_STATEMENTS ('else' STATEMENT_OR_STATEMENTS)?
+    | 'for' '(' COMMA_SEPARATED_STATEMENTS? ';' EXPRESSION ';' COMMA_SEPARATED_STATEMENTS? ')' STATEMENT_OR_STATEMENTS
+    | ASSIGN_STATEMENT (',' ASSIGN_STATEMENT)*
+
+COMMA_SEPARATED_STATEMENTS ::= STATEMENT (',' STATEMENT)*
+STATEMENT_OR_STATEMENTS ::= STATEMENT | '{' (STATEMENT ';')* '}'
 
 CHARACTER ::= [a-zA-Z0-9_ .,;:(){}[=<>%+*/'"] | ']' | '-'
 
@@ -56,8 +56,6 @@ HEX_INTEGER ::= '0' [0-9ABCDEF] [0-9ABCDEF] 'h'
 IDENTIFIER ::= ( '_' [a-zA-Z0-9_]* [a-zA-Z0-9] | [a-zA-Z] ) [a-zA-Z0-9_]*
 
 ASSIGN_STATEMENT ::= IDENTIFIER ('[' EXPRESSION ']')? ':=' EXPRESSION
-
-ASSIGN_STATEMENTS ::= ASSIGN_STATEMENT (',' ASSIGN_STATEMENT)*
 
 VAR_DECL ::= IDENTIFIER ('[' EXPRESSION ']' | ':=' EXPRESSION)?
 
