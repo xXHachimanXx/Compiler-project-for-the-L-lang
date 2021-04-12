@@ -2,7 +2,7 @@ import java.io.IOException;
 import java.io.PushbackReader;
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.List;
+import java.util.Scanner;
 import java.io.InputStreamReader;
 
 enum TokenType {
@@ -15,7 +15,6 @@ enum TokenType {
     WRITE,
     WRITELN,
     READLN,
-    RETURN,
     IF,
     THEN,
     ELSE,
@@ -29,8 +28,7 @@ enum TokenType {
     INTEGER,
     HEX_INTEGER,
     STRING,
-    TRUE,
-    FALSE,
+    BOOLEAN_CONST,
     // Operators
     ASSIGN,
     LEFT_PAREN,
@@ -78,7 +76,6 @@ class Lexer {
         keywords.put("write", new Token(TokenType.WRITE, "write"));
         keywords.put("writeln", new Token(TokenType.WRITELN, "writeln"));
         keywords.put("readln", new Token(TokenType.READLN, "readln"));
-        keywords.put("return", new Token(TokenType.RETURN, "return"));
         keywords.put("if", new Token(TokenType.IF, "if"));
         keywords.put("then", new Token(TokenType.THEN, "then"));
         keywords.put("else", new Token(TokenType.ELSE, "else"));
@@ -87,8 +84,8 @@ class Lexer {
         keywords.put("char", new Token(TokenType.CHAR, "char"));
         keywords.put("boolean", new Token(TokenType.BOOLEAN, "boolean"));
         keywords.put("final", new Token(TokenType.FINAL, "final"));
-        keywords.put("TRUE", new Token(TokenType.TRUE, "TRUE"));
-        keywords.put("FALSE", new Token(TokenType.FALSE, "FALSE"));
+        keywords.put("TRUE", new Token(TokenType.BOOLEAN_CONST, "TRUE"));
+        keywords.put("FALSE", new Token(TokenType.BOOLEAN_CONST, "FALSE"));
         keywords.put("or", new Token(TokenType.OR, "or"));
         keywords.put("and", new Token(TokenType.AND, "and"));
         keywords.put("not", new Token(TokenType.NOT, "not"));
@@ -100,6 +97,34 @@ class Lexer {
         initKeywords();
     }
 
+    boolean isValidCharForStr(char c) {
+        return (
+            isalnum(c) || c == ' ' || c == '\t' || c == '_' || c == '.' || c == ','
+            || c == ';' || c == ':' || c == '(' || c == ')' || c == '{' || c == '}'
+            || c == '[' || c == ']' || c == '=' || c == '<' || c == '>' || c == '%'
+            || c == '+' || c == '-' || c == '*' || c == '/' || c == '\'' || c == '"'
+        );
+    }
+
+    boolean isValidChar(char c) {
+        return (
+            isValidCharForStr(c) || c == '\n' || c == '\r' || c == (char) -1
+        );
+    }
+
+    void assertValidChar(char c) {
+        if (!isValidChar(c)) {
+            System.out.printf("%d\ncaractere invalido.\n", line);
+            System.exit(0);
+        }
+    }
+
+    char read() throws IOException {
+        char c = (char) reader.read();
+        assertValidChar(c);
+        return c;
+    }
+
     boolean isHex(char c) {
         return (c >= '0' && c <= '9') || (c >= 'A' && c <= 'F');
     }
@@ -107,27 +132,82 @@ class Lexer {
     Token readInteger(char firstDigit) throws IOException {
         String str = "" + firstDigit;
 
-        char c = (char) reader.read();
-        char c1 = (char) reader.read();
-        char c2 = (char) reader.read();
-        if (
-            firstDigit == '0'
-            && c2 == 'h'
-            && isHex(c)
-            && isHex(c1)
-        ) {
-            str += c;
-            str += c1;
-            str += c2;
-            return new Token(TokenType.HEX_INTEGER, str);
-        }
-
-        reader.unread(c2);
-        reader.unread(c1);
-
-        while (c >= '0' && c <= '9') {
-            str += c;
-            c = (char) reader.read();
+        char c = read();
+        if (firstDigit != '0') {
+            while (c >= '0' && c <= '9') {
+                str += c;
+                c = read();
+            }
+        } else {
+            if (c >= '0' && c <= '9') {
+                str += c;
+                c = read();
+                if (c == (char) -1) {
+                    System.out.printf("%d\nfim de arquivo nao esperado.\n", line);
+                    System.exit(0);
+                }
+                if (c >= '0' && c <= '9') {
+                    str += c;
+                    c = read();
+                    if (c == (char) -1) {
+                        System.out.printf("%d\nfim de arquivo nao esperado.\n", line);
+                        System.exit(0);
+                    }
+                    if (c == 'h') {
+                        str += c;
+                        return new Token(TokenType.HEX_INTEGER, str);
+                    } else if (c >= '0' && c <= '9') {
+                        str += c;
+                        c = read();
+                        while (c >= '0' && c <= '9') {
+                            str += c;
+                            c = read();
+                        }
+                    } else {
+                        System.out.printf("%d\nlexema nao identificado [%s%c].\n", line, str, c);
+                        System.exit(0);
+                    }
+                }
+                else if (c >= 'A' && c <= 'F') {
+                    str += c;
+                    c = read();
+                    if (c == (char) -1) {
+                        System.out.printf("%d\nfim de arquivo nao esperado.\n", line);
+                        System.exit(0);
+                    }
+                    if (c != 'h') {
+                        System.out.printf("%d\nlexema nao identificado [%s%c].\n", line, str, c);
+                        System.exit(0);
+                    }
+                    str += c;
+                    return new Token(TokenType.HEX_INTEGER, str);
+                }
+            }
+            else if (c >= 'A' && c <= 'F') {
+                str += c;
+                c = read();
+                if (c == (char) -1) {
+                    System.out.printf("%d\nfim de arquivo nao esperado.\n", line);
+                    System.exit(0);
+                }
+                if (!isHex(c)) {
+                    reader.unread(c);
+                    System.out.printf("%d\nlexema nao identificado [%s].\n", line, str);
+                    System.exit(0);
+                }
+                str += c;
+                c = read();
+                if (c == (char) -1) {
+                    System.out.printf("%d\nfim de arquivo nao esperado.\n", line);
+                    System.exit(0);
+                }
+                if (c != 'h') {
+                    System.out.printf("%d\nlexema nao identificado [%s%c].\n", line, str, c);
+                    System.exit(0);
+                }
+                str += c;
+                return new Token(TokenType.HEX_INTEGER, str);
+            }
         }
 
         reader.unread(c);
@@ -160,11 +240,11 @@ class Lexer {
         String str = "";
         str += firstDigit;
 
-        char c = (char) reader.read();
+        char c = read();
         while (isalnum(c) || c == '_') {
             assertValidChar(c);
             str += c;
-            c = (char) reader.read();
+            c = read();
         }
         reader.unread(c);
 
@@ -182,55 +262,38 @@ class Lexer {
     }
 
     char skipSpaces() throws IOException {
-        char c = (char) reader.read();
+        char c = read();
         while (isSpace(c)) {
             if (c == '\n') line++;
-            c = (char) reader.read();
+            c = read();
         }
         return c;
     }
 
-    boolean isValidChar(char c) {
-        return (
-            isalnum(c) || c == ' ' || c == '\t' || c == '_' || c == '.' || c == ','
-            || c == ';' || c == ':' || c == '(' || c == ')' || c == '{' || c == '}'
-            || c == '[' || c == ']' || c == '=' || c == '<' || c == '>' || c == '%'
-            || c == '+' || c == '-' || c == '*' || c == '/' || c == '\n' || c == '\r'
-            || c == '\'' || c == '"' || c == (char) -1
-        );
-    }
-
-    void assertValidChar(char c) {
-        if (!isValidChar(c)) {
-            System.out.printf("%d\ncaractere invalido.\n", line);
-            System.exit(0);
-        }
-    }
-
     Token readString() throws IOException {
         String str = "";
-        char c = (char) reader.read();
+        char c = read();
         while (c != '"') {
             if (c == (char) -1) {
                 System.out.printf("%d\nfim de arquivo nao esperado.\n", line);
                 System.exit(0);
             }
-            assertValidChar(c);
+            isValidCharForStr(c);
             str += c;
-            c = (char) reader.read();
+            c = read();
         }
         return new Token(TokenType.STRING, str);
     }
 
     Token readChar() throws IOException {
-        char c = (char) reader.read();
+        char c = read();
         if (c == (char) -1) {
             System.out.printf("%d\nfim de arquivo nao esperado.\n", line);
             System.exit(0);
         }
         assertValidChar(c);
 
-        char apostrophe = (char) reader.read();
+        char apostrophe = read();
         if (apostrophe == (char) -1) {
             System.out.printf("%d\nfim de arquivo nao esperado.\n", line);
             System.exit(0);
@@ -238,7 +301,8 @@ class Lexer {
         assertValidChar(apostrophe);
 
         if (apostrophe != '\'') {
-            System.out.printf("%d\nlexema nao identificado ['%c%c].\n", line, c, apostrophe);
+            reader.unread(apostrophe);
+            System.out.printf("%d\nlexema nao identificado ['%c].\n", line, c);
             System.exit(0);
         }
         return new Token(TokenType.CHAR, c);
@@ -246,7 +310,7 @@ class Lexer {
 
     void skipSingleLineComment() throws IOException {
         char c;
-        do { c = (char) reader.read(); }
+        do { c = read(); }
         while (c != '\n' && c != (char) -1);
         if (c == '\n') line++;
     }
@@ -255,7 +319,7 @@ class Lexer {
         char c;
         do {
             do {
-                c = (char) reader.read();
+                c = read();
                 if (c == '\n') line++;
             } while (c != '*' && c != (char) -1);
 
@@ -264,7 +328,7 @@ class Lexer {
                 System.exit(0);
             }
 
-            do { c = (char) reader.read(); }
+            do { c = read(); }
             while (c == '*');
 
             if (c == '\n') line++;
@@ -276,7 +340,7 @@ class Lexer {
     }
 
     void skipComments() throws IOException {
-        char c = (char) reader.read();
+        char c = read();
         if (c == '/') skipSingleLineComment();
         else if (c == '*') skipMultiLineComment();
         else reader.unread(c);
@@ -290,7 +354,7 @@ class Lexer {
             }
             if (c == '/') {
                 skipComments();
-                c = (char) reader.read();
+                c = read();
             }
             assertValidChar(c);
         }
@@ -298,7 +362,7 @@ class Lexer {
     }
 
     Token next() throws IOException {
-        char c = (char) reader.read();
+        char c = read();
         c = skipSpacesAndComments(c);
         if (c == (char) -1) return new Token(TokenType.EOF, (char) -1);
         if (c == ',') return new Token(TokenType.COMMA, ',');
@@ -322,7 +386,7 @@ class Lexer {
             return readIdentifier(c);
         if (c == '<')
         {
-            char c2 = (char) reader.read();
+            char c2 = read();
             if (c2 == '>') return new Token(TokenType.DIFFERENT, "<>");
             else if (c2 == '=') return new Token(TokenType.SMALLER_OR_EQUAL, "<=");
             else {
@@ -332,7 +396,7 @@ class Lexer {
         }
         if (c == '>')
         {
-            char c2 = (char) reader.read();
+            char c2 = read();
             if (c2 == '=') return new Token(TokenType.GREATER_OR_EQUAL, ">=");
             else {
                 reader.unread(c2);
@@ -341,7 +405,7 @@ class Lexer {
         }
         if (c == ':')
         {
-            char c2 = (char) reader.read();
+            char c2 = read();
             if (c2 == (char) -1) {
                 System.out.printf("%d\nfim de arquivo nao esperado.\n", line);
                 System.exit(0);
@@ -352,7 +416,7 @@ class Lexer {
             } else return new Token(TokenType.ASSIGN, ":=");
         }
 
-        System.out.printf("%d\ncaractere invalido.\n", line);
+        System.out.printf("%d\nlexema nao identificado [%c].\n", line, c);
         System.exit(0);
         return new Token(TokenType.EOF, "");
     }
@@ -461,15 +525,12 @@ class VarDeclsStatementNode extends StatementNode {
 
 class ConstDeclStatementNode extends StatementNode {
     String identifier;
-    ExpressionNode size;
     ExpressionNode value;
     ConstDeclStatementNode(
         String identifier,
-        ExpressionNode size,
         ExpressionNode value
     ) {
         this.identifier = identifier;
-        this.size = size;
         this.value = value;
     }
 }
@@ -515,13 +576,6 @@ class ReadlnArrayStatementNode extends ReadlnStatementNode {
     }
 }
 
-class ReturnStatementNode extends StatementNode {
-    ExpressionNode expression;
-    ReturnStatementNode(ExpressionNode expression) {
-        this.expression = expression;
-    }
-}
-
 class IfStatementNode extends StatementNode {
     ExpressionNode expression;
     StatementNode ifStatement;
@@ -562,19 +616,15 @@ class ArraySubscriptAssignStatementNode extends AssignStatementNode {
     }
 }
 
-class AssignStatementsNode extends StatementNode {
-    ArrayList<AssignStatementNode> stmts = new ArrayList<>();
-}
-
 class ForStatementNode extends StatementNode {
-    AssignStatementsNode init;
+    CompoundStatementNode init;
     ExpressionNode condition;
-    AssignStatementsNode inc;
+    CompoundStatementNode inc;
     StatementNode stmt;
     ForStatementNode(
-        AssignStatementsNode init,
+        CompoundStatementNode init,
         ExpressionNode condition,
-        AssignStatementsNode inc,
+        CompoundStatementNode inc,
         StatementNode stmt
     ) {
         this.init = init;
@@ -609,8 +659,8 @@ class Parser {
     }
 
     void eat() throws IOException {
-        System.out.printf("Ate type = %s, value = '%s'\n",
-            currentToken.type.name(), currentToken.value);
+        // System.out.printf("Ate type = %s, value = '%s'\n",
+        //     currentToken.type.name(), currentToken.value);
         currentToken = lexer.next();
     }
 
@@ -619,12 +669,11 @@ class Parser {
         else tokenNotExpected();
     }
 
-    ExpressionNode parsePrimaryExpression() throws IOException {
+    ExpressionNode parseConstExpression() throws IOException {
         ExpressionNode node = null;
         switch (currentToken.type) {
-            case TRUE:
-            case FALSE:
-                node = new BooleanExpressionNode(currentToken.type == TokenType.TRUE);
+            case BOOLEAN_CONST:
+                node = new BooleanExpressionNode(currentToken.value.equals("TRUE"));
                 eat();
                 break;
 
@@ -648,7 +697,14 @@ class Parser {
                 node = new StringExpressionNode(currentToken.value);
                 eat();
                 break;
+        }
+        return node;
+    }
 
+    ExpressionNode parsePrimaryExpression() throws IOException {
+        ExpressionNode node = parseConstExpression();
+        if (node != null) return node;
+        switch (currentToken.type) {
             case LEFT_PAREN:
                 eat();
                 node = new ParenthesizedExpressionNode(parseExpression());
@@ -749,7 +805,7 @@ class Parser {
 
     ExpressionNode parseExpression() throws IOException {
         ExpressionNode node = parseRelationalExpression();
-        System.out.println(node.getClass().getName());
+        // System.out.println(node.getClass().getName());
         return node;
     }
 
@@ -761,13 +817,15 @@ class Parser {
 
         if (currentToken.type == TokenType.LEFT_BRACKET) {
             eat();
-            size = parseExpression();
+            size = parseConstExpression();
+            if (size == null) tokenNotExpected();
             eat(TokenType.RIGHT_BRACKET);
         }
 
         else if (currentToken.type == TokenType.ASSIGN) {
-            eat(TokenType.ASSIGN);
-            value = parseExpression();
+            eat();
+            value = parseConstExpression();
+            if (value == null) tokenNotExpected();
         }
 
         return new VarDeclStatementNode(identifier, size, value);
@@ -780,33 +838,18 @@ class Parser {
             eat();
             node.varsDecl.add(parseVarDecl());
         }
-        System.out.println(node.getClass().getName());
+        // System.out.println(node.getClass().getName());
         return node;
     }
 
     ConstDeclStatementNode parseConstDecl() throws IOException {
         String identifier = currentToken.value;
-        ExpressionNode size = null;
         ExpressionNode value = null;
         eat(TokenType.IDENTIFIER);
-
-        if (
-            currentToken.type != TokenType.LEFT_BRACKET
-            && currentToken.type != TokenType.EQUAL
-        ) tokenNotExpected();
-
-        if (currentToken.type == TokenType.LEFT_BRACKET) {
-            eat();
-            size = parseExpression();
-            eat(TokenType.RIGHT_BRACKET);
-        }
-
-        else if (currentToken.type == TokenType.EQUAL) {
-            eat();
-            value = parseExpression();
-        }
-
-        return new ConstDeclStatementNode(identifier, size, value);
+        eat(TokenType.EQUAL);
+        value = parseConstExpression();
+        if (value == null) tokenNotExpected();
+        return new ConstDeclStatementNode(identifier, value);
     }
 
     ConstDeclsStatementNode parseConstDecls() throws IOException {
@@ -816,15 +859,7 @@ class Parser {
             eat();
             node.constDecls.add(parseConstDecl());
         }
-        System.out.println(node.getClass().getName());
-        return node;
-    }
-
-    CompoundStatementNode parseCompoundStatement() throws IOException {
-        CompoundStatementNode node = new CompoundStatementNode();
-        while (currentToken.type != TokenType.RIGHT_BRACES)
-            node.stmts.add(parseStatement());
-        eat(TokenType.RIGHT_BRACES);
+        // System.out.println(node.getClass().getName());
         return node;
     }
 
@@ -837,7 +872,6 @@ class Parser {
             node.args.add(parseExpression());
         }
         eat(TokenType.RIGHT_PAREN);
-        eat(TokenType.SEMICOLON);
         return node;
     }
 
@@ -850,7 +884,6 @@ class Parser {
             node.args.add(parseExpression());
         }
         eat(TokenType.RIGHT_PAREN);
-        eat(TokenType.SEMICOLON);
         return node;
     }
 
@@ -868,13 +901,6 @@ class Parser {
             node = new ReadlnVarStatementNode(identifier);
         }
         eat(TokenType.RIGHT_PAREN);
-        eat(TokenType.SEMICOLON);
-        return node;
-    }
-
-    ReturnStatementNode parseReturnStatement() throws IOException {
-        ReturnStatementNode node = new ReturnStatementNode(parseExpression());
-        eat(TokenType.SEMICOLON);
         return node;
     }
 
@@ -883,11 +909,11 @@ class Parser {
         ExpressionNode expression = parseExpression();
         eat(TokenType.RIGHT_PAREN);
         eat(TokenType.THEN);
-        StatementNode ifStatement = parseStatement();
+        StatementNode ifStatement = parseStatementOrStatements();
         StatementNode elseStatement = null;
         if (currentToken.type == TokenType.ELSE) {
             eat();
-            elseStatement = parseStatement();
+            elseStatement = parseStatementOrStatements();
         }
         IfStatementNode node = new IfStatementNode(expression, ifStatement, elseStatement);
         return node;
@@ -900,7 +926,7 @@ class Parser {
         eat();
 
         if (currentToken.type == TokenType.LEFT_BRACKET) {
-            eat(TokenType.LEFT_BRACKET);
+            eat();
             subscriptExpr = parseExpression();
             eat(TokenType.RIGHT_BRACKET);
         }
@@ -917,97 +943,130 @@ class Parser {
         return node;
     }
 
-    AssignStatementsNode parseAssignStatements() throws IOException {
-        AssignStatementsNode node = new AssignStatementsNode();
-        node.stmts.add(parseAssignStatement());
+    CompoundStatementNode parseCommaSeparatedStatements() throws IOException {
+        CompoundStatementNode node = new CompoundStatementNode();
+        node.stmts.add(parseStatement());
         while (currentToken.type == TokenType.COMMA) {
             eat();
-            node.stmts.add(parseAssignStatement());
+            node.stmts.add(parseStatement());
         }
         return node;
     }
 
     ForStatementNode parseForStatement() throws IOException {
         eat(TokenType.LEFT_PAREN);
-        AssignStatementsNode init = null, inc = null;
+        CompoundStatementNode init = null, inc = null;
         ExpressionNode condition = null;
 
-        if (currentToken.type != TokenType.SEMICOLON) init = parseAssignStatements();
+        if (currentToken.type != TokenType.SEMICOLON)
+            init = parseCommaSeparatedStatements();
         eat(TokenType.SEMICOLON);
 
         condition = parseExpression();
         eat(TokenType.SEMICOLON);
 
-        if (currentToken.type != TokenType.SEMICOLON) inc = parseAssignStatements();
+        if (currentToken.type != TokenType.RIGHT_PAREN)
+            inc = parseCommaSeparatedStatements();
 
         eat(TokenType.RIGHT_PAREN);
-        ForStatementNode node = new ForStatementNode(init, condition, inc, parseStatement());
+        ForStatementNode node = new ForStatementNode(
+            init, condition, inc, parseStatementOrStatements()
+        );
         return node;
     }
 
     StatementNode parseStatement() throws IOException {
         StatementNode node = null;
         switch (currentToken.type) {
-            case LEFT_BRACES:
-                eat(TokenType.LEFT_BRACES);
-                node = parseCompoundStatement();
-                break;
-
             case WRITE:
-                eat(TokenType.WRITE);
+                eat();
                 node = parseWriteStatement();
                 break;
 
             case WRITELN:
-                eat(TokenType.WRITELN);
+                eat();
                 node = parseWritelnStatement();
                 break;
 
             case READLN:
-                eat(TokenType.READLN);
+                eat();
                 node = parseReadlnStatement();
                 break;
 
-            case RETURN:
-                eat(TokenType.RETURN);
-                node = parseReturnStatement();
-                break;
-
             case IDENTIFIER:
-                node = parseAssignStatements();
-                eat(TokenType.SEMICOLON);
-                break;
-
-            case INT:
-            case CHAR:
-            case BOOLEAN:
-                eat();
-                node = parseVarDecls();
-                eat(TokenType.SEMICOLON);
-                break;
-
-            case FINAL:
-                eat();
-                node = parseConstDecls();
-                eat(TokenType.SEMICOLON);
+                node = parseAssignStatement();
                 break;
 
             case IF:
-                eat(TokenType.IF);
+                eat();
                 node = parseIfStatement();
                 break;
 
             case FOR:
-                eat(TokenType.FOR);
+                eat();
                 node = parseForStatement();
                 break;
 
-            default:
-                node = new ExpressionStatementNode(parseExpression());
+            default: tokenNotExpected(); break;
+        }
+        // System.out.println(node.getClass().getName());
+        return node;
+    }
+
+    StatementNode parseTerminatedStatement() throws IOException {
+        StatementNode node = null;
+        switch (currentToken.type) {
+            case WRITE:
+                eat();
+                node = parseWriteStatement();
                 eat(TokenType.SEMICOLON);
                 break;
+
+            case WRITELN:
+                eat();
+                node = parseWritelnStatement();
+                eat(TokenType.SEMICOLON);
+                break;
+
+            case READLN:
+                eat();
+                node = parseReadlnStatement();
+                eat(TokenType.SEMICOLON);
+                break;
+
+            case IDENTIFIER:
+                node = parseAssignStatement();
+                eat(TokenType.SEMICOLON);
+                break;
+
+            case IF:
+                eat();
+                node = parseIfStatement();
+                break;
+
+            case FOR:
+                eat();
+                node = parseForStatement();
+                break;
+
+            default: tokenNotExpected(); break;
         }
-        System.out.println(node.getClass().getName());
+        // System.out.println(node.getClass().getName());
+        return node;
+    }
+
+    StatementNode parseStatementOrStatements() throws IOException {
+        StatementNode node = null;
+        if (currentToken.type == TokenType.LEFT_BRACES) {
+            eat();
+            CompoundStatementNode mynode = new CompoundStatementNode();
+            node = mynode;
+            while (currentToken.type != TokenType.RIGHT_BRACES)
+                mynode.stmts.add(parseTerminatedStatement());
+            eat(TokenType.RIGHT_BRACES);
+        } else {
+            node = parseTerminatedStatement();
+        }
         return node;
     }
 
@@ -1031,96 +1090,104 @@ class Parser {
         eat(TokenType.MAIN);
         eat(TokenType.LEFT_BRACES);
         while (currentToken.type != TokenType.RIGHT_BRACES)
-            node.stmts.add(parseStatement());
+            node.stmts.add(parseTerminatedStatement());
         eat(TokenType.RIGHT_BRACES);
         eat(TokenType.EOF);
-        System.out.println(node.getClass().getName());
+        // System.out.println(node.getClass().getName());
         return node;
     }
 }
 
-class CodeGenerator {
-    int varCounter = 0;
-    int stackSize = 0;
-    List<String> dataSection = new ArrayList<>();
-    List<String> codeSection = new ArrayList<>();
+// class CodeGenerator {
+//     int varCounter = 0;
+//     int stackSize = 0;
+//     List<String> dataSection = new ArrayList<>();
+//     List<String> codeSection = new ArrayList<>();
 
-    private void addData(String line, int size) {
-        dataSection.add(line);
-        stackSize += size;
-    }
+//     private void addData(String line, int size) {
+//         dataSection.add(line);
+//         stackSize += size;
+//     }
 
-    private void addCode(String line) {
-        codeSection.add(line);
-    }
+//     private void addCode(String line) {
+//         codeSection.add(line);
+//     }
 
-    public void generate(WriteStatementNode node) {
-        String str = "";
-        for (ExpressionNode arg : node.args) {
-            Class<?> argClass = arg.getClass();
-            if (argClass.equals(StringExpressionNode.class)) {
-                StringExpressionNode aux = (StringExpressionNode) arg;
-                str += aux.value;
-            } else if (argClass.equals(IntExpressionNode.class)) {
-                IntExpressionNode aux = (IntExpressionNode) arg;
-                str += aux.value;
-            }
-        }
-        addData(
-            String.format("var%d db \"%s\", '$'", varCounter, str),
-            str.getBytes().length + 1
-        );
-        addCode(String.format("print var%d", varCounter));
-        varCounter++;
-    }
+//     public void generate(WriteStatementNode node) {
+//         String str = "";
+//         for (ExpressionNode arg : node.args) {
+//             Class<?> argClass = arg.getClass();
+//             if (argClass.equals(StringExpressionNode.class)) {
+//                 StringExpressionNode aux = (StringExpressionNode) arg;
+//                 str += aux.value;
+//             } else if (argClass.equals(IntExpressionNode.class)) {
+//                 IntExpressionNode aux = (IntExpressionNode) arg;
+//                 str += aux.value;
+//             }
+//         }
+//         addData(
+//             String.format("var%d db \"%s\", '$'", varCounter, str),
+//             str.getBytes().length + 1
+//         );
+//         addCode(String.format("print var%d", varCounter));
+//         varCounter++;
+//     }
 
-    public void generate(WritelnStatementNode node) {
-        WriteStatementNode auxNode = new WriteStatementNode();
-        auxNode.args = new ArrayList<>(node.args);
-        auxNode.args.add(new StringExpressionNode("\n"));
-    }
+//     public void generate(WritelnStatementNode node) {
+//         WriteStatementNode auxNode = new WriteStatementNode();
+//         auxNode.args = new ArrayList<>(node.args);
+//         auxNode.args.add(new StringExpressionNode("\n"));
+//     }
 
-    public void generate(StatementNode node) {
-        Class<?> nodeClass = node.getClass();
-        if (nodeClass.equals(WriteStatementNode.class))
-            generate((WriteStatementNode) node);
-    }
+//     public void generate(StatementNode node) {
+//         Class<?> nodeClass = node.getClass();
+//         if (nodeClass.equals(WriteStatementNode.class))
+//             generate((WriteStatementNode) node);
+//     }
 
-    public void generate(ArrayList<StatementNode> nodes) {
-        for (StatementNode node : nodes) generate(node);
-    }
+//     public void generate(ArrayList<StatementNode> nodes) {
+//         for (StatementNode node : nodes) generate(node);
+//     }
 
-    public String generate(ProgramNode node) {
-        generate(node.stmts);
-        String.join("\n", dataSection);
-        return String.format("""
-.model small
-.stack %d
+//     public String generate(ProgramNode node) {
+//         generate(node.stmts);
+//         return String.format("""
+// .model small
+// .stack %d
 
-print macro msg
-    lea dx, msg
-    mov ah, 09h
-    int 21h
-endm
+// print macro msg
+//     lea dx, msg
+//     mov ah, 09h
+//     int 21h
+// endm
 
-.data
-%s
+// .data
+// %s
 
-.code
-    MOV AX, @DATA
-    MOV DS, AX
+// .code
+//     MOV AX, @DATA
+//     MOV DS, AX
 
-    %s
+//     %s
 
-    MOV AH, 4CH ; Exit
-    INT 21H
-end
-""", stackSize, String.join("\n", dataSection), String.join("\n", codeSection));
-    }
-}
+//     MOV AH, 4CH ; Exit
+//     INT 21H
+// end
+// """, stackSize, String.join("\n", dataSection), String.join("\n", codeSection));
+//     }
+// }
 
 public class Main {
     public static void main(String[] args) throws IOException {
+        // try (Scanner scan = new Scanner(System.in)) {
+        //     try {
+        //         while (true) {
+        //             System.err.println(scan.nextLine());
+        //         }
+        //     } catch (Exception e) {
+        //     }
+        // }
+        // System.exit(1);
         PushbackReader input = new PushbackReader(new InputStreamReader(System.in), 3);
         Lexer lexer = new Lexer(input);
         // Token tok = lexer.next();
@@ -1129,7 +1196,7 @@ public class Main {
         //     tok = lexer.next();
         // }
         ProgramNode node = new Parser(lexer).parseProgram();
-        System.out.printf(new CodeGenerator().generate(node));
+        // System.out.printf(new CodeGenerator().generate(node));
         System.out.printf("%d linhas compiladas.\n", lexer.line);
     }
 }
