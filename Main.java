@@ -2,7 +2,9 @@ import java.io.IOException;
 import java.io.PushbackReader;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.LinkedList;
 import java.util.Scanner;
+import java.util.Map.Entry;
 import java.io.InputStreamReader;
 
 enum TokenType {
@@ -53,6 +55,19 @@ enum TokenType {
     SMALLER_OR_EQUAL,
 }
 
+enum SymbolClass{
+    CONST,
+    VAR
+}
+
+enum Type{
+    INT,
+    CHAR,
+    STR,
+    BOOL,
+    VET
+}
+
 class Token {
     TokenType type;
     String value;
@@ -99,16 +114,16 @@ class Lexer {
 
     boolean isValidCharForStr(char c) {
         return (
-            isalnum(c) || c == ' ' || c == '\t' || c == '_' || c == '.' || c == ','
-            || c == ';' || c == ':' || c == '(' || c == ')' || c == '{' || c == '}'
-            || c == '[' || c == ']' || c == '=' || c == '<' || c == '>' || c == '%'
-            || c == '+' || c == '-' || c == '*' || c == '/' || c == '\'' || c == '"'
+                isalnum(c) || c == ' ' || c == '\t' || c == '_' || c == '.' || c == ','
+                        || c == ';' || c == ':' || c == '(' || c == ')' || c == '{' || c == '}'
+                        || c == '[' || c == ']' || c == '=' || c == '<' || c == '>' || c == '%'
+                        || c == '+' || c == '-' || c == '*' || c == '/' || c == '\'' || c == '"'
         );
     }
 
     boolean isValidChar(char c) {
         return (
-            isValidCharForStr(c) || c == '\n' || c == '\r' || c == (char) -1
+                isValidCharForStr(c) || c == '\n' || c == '\r' || c == (char) -1
         );
     }
 
@@ -230,9 +245,9 @@ class Lexer {
 
     boolean isalnum(char c) {
         return (
-            (c >= '0' && c <= '9')
-            || (c >= 'a' && c <= 'z')
-            || (c >= 'A' && c <= 'Z')
+                (c >= '0' && c <= '9')
+                        || (c >= 'a' && c <= 'z')
+                        || (c >= 'A' && c <= 'Z')
         );
     }
 
@@ -480,7 +495,7 @@ class BinaryExpressionNode extends ExpressionNode {
     String operator;
     ExpressionNode rightExpression;
     BinaryExpressionNode(
-        ExpressionNode leftExpression, String operator, ExpressionNode rightExpression
+            ExpressionNode leftExpression, String operator, ExpressionNode rightExpression
     ) {
         this.leftExpression = leftExpression;
         this.operator = operator;
@@ -509,9 +524,9 @@ class VarDeclStatementNode extends StatementNode {
     ExpressionNode size;
     ExpressionNode value;
     VarDeclStatementNode(
-        String identifier,
-        ExpressionNode size,
-        ExpressionNode value
+            String identifier,
+            ExpressionNode size,
+            ExpressionNode value
     ) {
         this.identifier = identifier;
         this.size = size;
@@ -527,8 +542,8 @@ class ConstDeclStatementNode extends StatementNode {
     String identifier;
     ExpressionNode value;
     ConstDeclStatementNode(
-        String identifier,
-        ExpressionNode value
+            String identifier,
+            ExpressionNode value
     ) {
         this.identifier = identifier;
         this.value = value;
@@ -581,9 +596,9 @@ class IfStatementNode extends StatementNode {
     StatementNode ifStatement;
     StatementNode elseStatement;
     IfStatementNode(
-        ExpressionNode expression,
-        StatementNode ifStatement,
-        StatementNode elseStatement
+            ExpressionNode expression,
+            StatementNode ifStatement,
+            StatementNode elseStatement
     ) {
         this.expression = expression;
         this.ifStatement = ifStatement;
@@ -609,7 +624,7 @@ class IdentifierAssignStatementNode extends AssignStatementNode {
 class ArraySubscriptAssignStatementNode extends AssignStatementNode {
     ExpressionNode index;
     ArraySubscriptAssignStatementNode(
-        String identifier, ExpressionNode index, ExpressionNode value
+            String identifier, ExpressionNode index, ExpressionNode value
     ) {
         super(identifier, value);
         this.index = index;
@@ -622,10 +637,10 @@ class ForStatementNode extends StatementNode {
     CompoundStatementNode inc;
     StatementNode stmt;
     ForStatementNode(
-        CompoundStatementNode init,
-        ExpressionNode condition,
-        CompoundStatementNode inc,
-        StatementNode stmt
+            CompoundStatementNode init,
+            ExpressionNode condition,
+            CompoundStatementNode inc,
+            StatementNode stmt
     ) {
         this.init = init;
         this.condition = condition;
@@ -640,13 +655,42 @@ class ProgramNode extends Node {
     ArrayList<StatementNode> stmts = new ArrayList<>();
 }
 
+class ParserUtils {
+    public static int getTypeSize(TokenType type, int size){
+        int size2 = 0;
+        // INTEGER,
+        //    HEX_INTEGER,
+        //    STRING,
+        //    BOOLEAN_CONST,
+        switch(type){
+            case INT: size2 = 2; break;
+            case INTEGER: size2 = 2; break;
+            case HEX_INTEGER: size2 = 2; break;
+            case BOOLEAN: size2 = 1; break;
+            case BOOLEAN_CONST: size2 = 1; break;
+            case CHAR: size2 = 1; break;
+            case IDENTIFIER: break;
+            default :
+                System.out.println("ERROR: Type not supported");
+        }
+
+        if(size != 0)
+            size2 *= size;
+
+        return size2;
+    }
+}
+
 class Parser {
     Lexer lexer;
     Token currentToken;
+    Semantic semantic;
+
 
     Parser(Lexer lexer) throws IOException {
         this.lexer = lexer;
         this.currentToken = lexer.next();
+        this.semantic = new Semantic(lexer);
     }
 
     void tokenNotExpected() {
@@ -654,7 +698,7 @@ class Parser {
             System.out.printf("%d\nfim de arquivo nao esperado.\n", lexer.line);
         else
             System.out.printf("%d\ntoken nao esperado [%s].\n",
-                lexer.line, currentToken.value);
+                    lexer.line, currentToken.value);
         System.exit(0);
     }
 
@@ -749,10 +793,10 @@ class Parser {
     ExpressionNode parseMultiplicativeExpression() throws IOException {
         ExpressionNode node = parseUnaryExpression();
         while (
-            currentToken.type == TokenType.ASTERISK
-            || currentToken.type == TokenType.BACKSLASH
-            || currentToken.type == TokenType.PERCENT
-            || currentToken.type == TokenType.AND
+                currentToken.type == TokenType.ASTERISK
+                        || currentToken.type == TokenType.BACKSLASH
+                        || currentToken.type == TokenType.PERCENT
+                        || currentToken.type == TokenType.AND
         ) {
             String operator = currentToken.value;
             eat();
@@ -767,20 +811,20 @@ class Parser {
             String operator = currentToken.value;
             eat();
             node = new UnaryExpressionNode(
-                operator, parseMultiplicativeExpression()
+                    operator, parseMultiplicativeExpression()
             );
         } else {
             node = parseMultiplicativeExpression();
         }
         while (
-            currentToken.type == TokenType.PLUS
-            || currentToken.type == TokenType.MINUS
-            || currentToken.type == TokenType.OR
+                currentToken.type == TokenType.PLUS
+                        || currentToken.type == TokenType.MINUS
+                        || currentToken.type == TokenType.OR
         ) {
             String operator = currentToken.value;
             eat();
             node = new BinaryExpressionNode(
-                node, operator, parseMultiplicativeExpression()
+                    node, operator, parseMultiplicativeExpression()
             );
         }
         return node;
@@ -789,12 +833,12 @@ class Parser {
     ExpressionNode parseRelationalExpression() throws IOException {
         ExpressionNode node = parseAdditiveExpression();
         while (
-            currentToken.type == TokenType.DIFFERENT
-            || currentToken.type == TokenType.EQUAL
-            || currentToken.type == TokenType.SMALLER
-            || currentToken.type == TokenType.GREATER
-            || currentToken.type == TokenType.SMALLER_OR_EQUAL
-            || currentToken.type == TokenType.GREATER_OR_EQUAL
+                currentToken.type == TokenType.DIFFERENT
+                        || currentToken.type == TokenType.EQUAL
+                        || currentToken.type == TokenType.SMALLER
+                        || currentToken.type == TokenType.GREATER
+                        || currentToken.type == TokenType.SMALLER_OR_EQUAL
+                        || currentToken.type == TokenType.GREATER_OR_EQUAL
         ) {
             String operator = currentToken.value;
             eat();
@@ -809,16 +853,22 @@ class Parser {
         return node;
     }
 
-    VarDeclStatementNode parseVarDecl() throws IOException {
+    VarDeclStatementNode parseVarDecl(TokenType tokenType) throws IOException {
         String identifier = currentToken.value;
         ExpressionNode size = null;
         ExpressionNode value = null;
         eat(TokenType.IDENTIFIER);
+        int vetSize = 0;
+        int varValue = 0;
 
         if (currentToken.type == TokenType.LEFT_BRACKET) {
             eat();
             size = parseConstExpression();
             if (size == null) tokenNotExpected();
+
+            IntExpressionNode intNode = (IntExpressionNode)size;
+            vetSize = intNode.value;
+
             eat(TokenType.RIGHT_BRACKET);
         }
 
@@ -826,17 +876,25 @@ class Parser {
             eat();
             value = parseConstExpression();
             if (value == null) tokenNotExpected();
+
+            //Semantic Action
+            this.semantic.verifyDeclaredVariable(identifier);
+
+            return new VarDeclStatementNode(identifier, size, value);
         }
 
+        //Semantic Action
+        this.semantic.addSymbol(new Symbol(identifier, SymbolClass.VAR, tokenType, vetSize));
         return new VarDeclStatementNode(identifier, size, value);
     }
 
-    VarDeclsStatementNode parseVarDecls() throws IOException {
+    VarDeclsStatementNode parseVarDecls(TokenType tokenType) throws IOException {
         VarDeclsStatementNode node = new VarDeclsStatementNode();
-        node.varsDecl.add(parseVarDecl());
+        node.varsDecl.add(parseVarDecl(tokenType));
         while (currentToken.type == TokenType.COMMA) {
             eat();
-            node.varsDecl.add(parseVarDecl());
+            tokenType = currentToken.type;
+            node.varsDecl.add(parseVarDecl(tokenType));
         }
         // System.out.println(node.getClass().getName());
         return node;
@@ -847,8 +905,14 @@ class Parser {
         ExpressionNode value = null;
         eat(TokenType.IDENTIFIER);
         eat(TokenType.EQUAL);
+
+        TokenType tokenType = currentToken.type;
+
         value = parseConstExpression();
+
         if (value == null) tokenNotExpected();
+        this.semantic.addSymbol(new Symbol(identifier, SymbolClass.CONST, tokenType, 0)); //Semantic Action
+
         return new ConstDeclStatementNode(identifier, value);
     }
 
@@ -859,7 +923,6 @@ class Parser {
             eat();
             node.constDecls.add(parseConstDecl());
         }
-        // System.out.println(node.getClass().getName());
         return node;
     }
 
@@ -937,7 +1000,7 @@ class Parser {
             node = new IdentifierAssignStatementNode(identifier, parseExpression());
         } else {
             node = new ArraySubscriptAssignStatementNode(
-                identifier, subscriptExpr, parseExpression()
+                    identifier, subscriptExpr, parseExpression()
             );
         }
         return node;
@@ -970,7 +1033,7 @@ class Parser {
 
         eat(TokenType.RIGHT_PAREN);
         ForStatementNode node = new ForStatementNode(
-            init, condition, inc, parseStatementOrStatements()
+                init, condition, inc, parseStatementOrStatements()
         );
         return node;
     }
@@ -1073,17 +1136,19 @@ class Parser {
     ProgramNode parseProgram() throws IOException {
         ProgramNode node = new ProgramNode();
         while (
-            currentToken.type == TokenType.INT
-            || currentToken.type == TokenType.CHAR
-            || currentToken.type == TokenType.BOOLEAN
-            || currentToken.type == TokenType.FINAL
+                currentToken.type == TokenType.INT
+                        || currentToken.type == TokenType.CHAR
+                        || currentToken.type == TokenType.BOOLEAN
+                        || currentToken.type == TokenType.FINAL
         ) {
-            if (currentToken.type == TokenType.FINAL) {
+            System.out.println("TOKEN TYPE: " + currentToken.type + " TOKEN VALUE: " + currentToken.value);
+            TokenType currentTokenType = currentToken.type;
+            if (currentTokenType == TokenType.FINAL) {
                 eat();
                 node.constDecls.add(parseConstDecls());
             } else {
                 eat();
-                node.varDecls.add(parseVarDecls());
+                node.varDecls.add(parseVarDecls(currentTokenType));
             }
             eat(TokenType.SEMICOLON);
         }
@@ -1093,8 +1158,109 @@ class Parser {
             node.stmts.add(parseTerminatedStatement());
         eat(TokenType.RIGHT_BRACES);
         eat(TokenType.EOF);
-        // System.out.println(node.getClass().getName());
+
+        System.out.println(this.semantic.symTable);
+
         return node;
+    }
+}
+
+/* Semantico Area */
+
+class Semantic{
+    public SymTable symTable;
+    public Lexer lexer;
+    public int address = 16384;
+
+    public Semantic(Lexer lexer){
+        this.symTable = new SymTable();
+        this.lexer = lexer;
+    }
+
+    public void addSymbol(Symbol s) throws IOException{
+        Symbol symbol = symTable.getSymbol(s.getName());
+
+        if(symbol == null){
+            int size = ParserUtils.getTypeSize(s.type, s.size);
+            s.address = address;
+            address+= size;
+
+            symTable.addSymbol(s);
+        }
+        else{
+            SemanticErros.declaredVariable(s.getName(), lexer.line);
+        }
+    }
+
+    public void verifyDeclaredVariable(String symbolName){
+        if(!containsSymbol(symbolName))
+            SemanticErros.undeclaredVariable(symbolName, lexer.line);
+    }
+
+    private boolean containsSymbol(String symbolName){
+        Symbol symbol = symTable.getSymbol(symbolName);
+
+        return symbol != null;
+    }
+}
+
+class SemanticErros{
+    public static void declaredVariable(String variableName, int line){
+        System.out.println(String.format("VARIÁVEL '%s' JÁ DECLARADA -> Linha: %d", variableName, line));
+        System.exit(0);
+    }
+
+    public static void undeclaredVariable(String variableName, int line){
+        System.out.println(String.format("VARIÁVEL '%s' NÃO DECLARADA -> Linha: %d", variableName, line));
+        System.exit(0);
+    }
+}
+
+class Symbol{
+    public String name;
+    public SymbolClass symbolClass;
+    public TokenType type;
+    public int size;
+    public int address;
+
+    public Symbol(String name, SymbolClass symbolClass, TokenType type, int size){
+        this.name = name;
+        this.symbolClass = symbolClass;
+        this.type = type;
+        this.size = size;
+    }
+
+    public String getName(){
+        return this.name;
+    }
+}
+
+class SymTable{
+    private HashMap<String, Symbol> symTable;
+
+    public SymTable(){
+        this.symTable = new HashMap<>();
+    }
+
+    public void addSymbol(Symbol s){
+        symTable.put(s.getName(), s);
+
+    }
+
+    public Symbol getSymbol(String name){
+        return symTable.get(name);
+    }
+
+    @Override
+    public String toString(){
+        String str = "SYMBOL TABLE\n";
+        for (Entry<String, Symbol> entry : symTable.entrySet()) {
+            Symbol s = entry.getValue();
+            str+= String.format("NAME: %s SYMBOL CLASS: %s TYPE: %s SIZE: %d ADDRESS: %d \n",
+                    s.getName(), s.symbolClass, s.type, s.size, s.address);
+        }
+
+        return str;
     }
 }
 
@@ -1188,6 +1354,7 @@ public class Main {
         //     }
         // }
         // System.exit(1);
+        System.out.println("START");
         PushbackReader input = new PushbackReader(new InputStreamReader(System.in), 3);
         Lexer lexer = new Lexer(input);
         // Token tok = lexer.next();
