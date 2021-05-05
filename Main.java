@@ -1051,6 +1051,8 @@ class Parser {
 
         //Semantic Action
         this.semantic.verifyTypeCompatibility(identifier, ParserUtils.getType(node.value));
+        this.semantic.verifyClassCompatibility(identifier);
+
         return node;
     }
 
@@ -1267,6 +1269,14 @@ class Semantic{
         verifyTypeCompatibility(symbol.type, tokenType);
     }
 
+    public void verifyClassCompatibility(String symbolName){
+        Symbol symbol = getDeclaredSymbol(symbolName);
+
+        if(symbol.symbolClass == SymbolClass.CONST){
+            SemanticErros.changeConst(symbolName, lexer.line);
+        }
+    }
+
     private void verifyTypeCompatibility(TokenType tokenTypeLeft, TokenType tokenTypeRight){
         if(tokenTypeLeft == TokenType.INT && (tokenTypeRight != TokenType.INTEGER && tokenTypeRight != TokenType.HEX_INTEGER)){
             SemanticErros.incompatibleType(tokenTypeLeft, tokenTypeRight, lexer.line);
@@ -1303,6 +1313,11 @@ class SemanticErros{
 
     public static void incompatibleType(TokenType tokenTypeLeft, TokenType tokenTypeRight, int line){
         System.out.println(String.format("[%d] TIPOS INCOMPATIVEIS -> %s com %s", line, tokenTypeLeft.toString(), tokenTypeRight.toString()));
+        breakProgram();
+    }
+
+    public static void changeConst(String symbolName, int line){
+        System.out.println(String.format("[%d] APENAS VARIÁVEIS PODEM SER ATRIBUIDAS -> Nome identificador %s", line, symbolName));
         breakProgram();
     }
 

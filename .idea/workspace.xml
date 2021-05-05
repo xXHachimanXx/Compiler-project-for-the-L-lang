@@ -4,7 +4,6 @@
     <list default="true" id="d5ae3349-d451-49e4-9bfc-c5ca012f8f9c" name="Default Changelist" comment="verificando unicidade">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/Main.java" beforeDir="false" afterPath="$PROJECT_DIR$/Main.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/test/exemplo1.l" beforeDir="false" afterPath="$PROJECT_DIR$/test/exemplo1.l" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/test/exemplo3.l" beforeDir="false" afterPath="$PROJECT_DIR$/test/exemplo3.l" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
@@ -38,7 +37,7 @@
       <option name="MAIN_CLASS_NAME" value="Main" />
       <module name="Compiler-project-for-the-L-lang" />
       <option name="REDIRECT_INPUT" value="true" />
-      <option name="INPUT_FILE" value="$PROJECT_DIR$/test/exemplo2.l" />
+      <option name="INPUT_FILE" value="$PROJECT_DIR$/test/exemplo3.l" />
       <method v="2">
         <option name="Make" enabled="true" />
       </method>
@@ -110,12 +109,12 @@
         </line-breakpoint>
         <line-breakpoint type="java-line">
           <url>file://$PROJECT_DIR$/Main.java</url>
-          <line>1270</line>
+          <line>1280</line>
           <option name="timeStamp" value="9" />
         </line-breakpoint>
         <line-breakpoint type="java-line">
           <url>file://$PROJECT_DIR$/Main.java</url>
-          <line>1053</line>
+          <line>1055</line>
           <option name="timeStamp" value="17" />
         </line-breakpoint>
         <line-breakpoint type="java-line">
@@ -127,6 +126,11 @@
           <url>file://$PROJECT_DIR$/Main.java</url>
           <line>845</line>
           <option name="timeStamp" value="27" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" type="java-line">
+          <url>file://$PROJECT_DIR$/Main.java</url>
+          <line>1053</line>
+          <option name="timeStamp" value="40" />
         </line-breakpoint>
       </breakpoints>
     </breakpoint-manager>
