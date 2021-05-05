@@ -5,7 +5,7 @@ import java.util.HashMap;
 import java.util.Map.Entry;
 import java.io.InputStreamReader;
 
-//TODO Verificar o tipo da váriavel que tá acessando [Semantic]
+//TODO Verificar o tipo das atribuições [Semantic]
 
 enum TokenType {
     EOF,
@@ -679,6 +679,41 @@ class ParserUtils {
 
         return size2;
     }
+
+    public static TokenType getType(ExpressionNode node){
+        TokenType tokenType = null;
+        if(node instanceof ArraySubscriptExpressionNode){
+            tokenType = getBinary(((ArraySubscriptExpressionNode) node).subscriptExpr);
+            if(tokenType == null)
+                return getLiteral(((ArraySubscriptExpressionNode) node).subscriptExpr);
+        }else if(node instanceof BinaryExpressionNode){
+            return getBinary(node);
+        }else if(node instanceof IntExpressionNode){
+            tokenType = getLiteral(node);
+        }
+
+        return tokenType;
+    }
+
+    private static TokenType getLiteral(ExpressionNode node){
+        if(node instanceof IntExpressionNode){
+            return TokenType.INTEGER;
+        } else if(node instanceof BooleanExpressionNode){
+            return TokenType.BOOLEAN_CONST;
+        }else if(node instanceof CharExpressionNode){
+            return TokenType.CHAR;
+        }
+
+        return null;
+    }
+
+    private static TokenType getBinary(ExpressionNode node){
+        if(node instanceof BinaryExpressionNode){
+            return getLiteral(((BinaryExpressionNode) node).rightExpression);
+        }
+
+        return null;
+    }
 }
 
 class Parser {
@@ -877,11 +912,14 @@ class Parser {
 
         else if (currentToken.type == TokenType.ASSIGN) {
             eat();
+            TokenType currentTokenType = currentToken.type;
+
             value = parseConstExpression();
             if (value == null) tokenNotExpected();
 
             //Semantic Action
             this.semantic.verifyDeclaredVariable(identifier);
+            this.semantic.verifyTypeCompatibility(identifier, currentTokenType);
 
             return new VarDeclStatementNode(identifier, size, value);
         }
@@ -1010,6 +1048,9 @@ class Parser {
                     identifier, subscriptExpr, parseExpression()
             );
         }
+
+        //Semantic Action
+        this.semantic.verifyTypeCompatibility(identifier, ParserUtils.getType(node.value));
         return node;
     }
 
@@ -1199,6 +1240,16 @@ class Semantic{
         }
     }
 
+    private Symbol getDeclaredSymbol(String symbolName){
+        Symbol symbol = symTable.getSymbol(symbolName);
+
+        if(symbol == null){
+            SemanticErros.undeclaredVariable(symbol.getName(), lexer.line);
+        }
+
+        return symbol;
+    }
+
     public void verifyDeclaredVariable(String symbolName){
         if(!containsSymbol(symbolName))
             SemanticErros.undeclaredVariable(symbolName, lexer.line);
@@ -1206,7 +1257,23 @@ class Semantic{
 
     public void verifyVetSize(String symbolName, int size){
         if(size > 8000){
-            SemanticErros.vetOverflow(symbolName, size);
+            SemanticErros.vetOverflow(symbolName, size, lexer.line);
+        }
+    }
+
+    public void verifyTypeCompatibility(String symbolName, TokenType tokenType){
+        Symbol symbol = getDeclaredSymbol(symbolName);
+
+        verifyTypeCompatibility(symbol.type, tokenType);
+    }
+
+    private void verifyTypeCompatibility(TokenType tokenTypeLeft, TokenType tokenTypeRight){
+        if(tokenTypeLeft == TokenType.INT && (tokenTypeRight != TokenType.INTEGER && tokenTypeRight != TokenType.HEX_INTEGER)){
+            SemanticErros.incompatibleType(tokenTypeLeft, tokenTypeRight, lexer.line);
+        }else if(tokenTypeLeft == TokenType.CHAR && (tokenTypeRight != TokenType.CHAR && tokenTypeRight != TokenType.STRING)){
+            SemanticErros.incompatibleType(tokenTypeLeft, tokenTypeRight, lexer.line);
+        }else if(tokenTypeLeft == TokenType.BOOLEAN && tokenTypeRight != TokenType.BOOLEAN_CONST){
+            SemanticErros.incompatibleType(tokenTypeLeft, tokenTypeRight, lexer.line);
         }
     }
 
@@ -1220,17 +1287,27 @@ class Semantic{
 
 class SemanticErros{
     public static void declaredVariable(String variableName, int line){
-        System.out.println(String.format("VARIÁVEL '%s' JÁ DECLARADA -> Linha: %d", variableName, line));
-        System.exit(0);
+        System.out.println(String.format("[%d] VARIÁVEL '%s' JÁ DECLARADA", line, variableName));
+        breakProgram();
     }
 
     public static void undeclaredVariable(String variableName, int line){
-        System.out.println(String.format("VARIÁVEL '%s' NÃO DECLARADA -> Linha: %d", variableName, line));
-        System.exit(0);
+        System.out.println(String.format("[%d] VARIÁVEL '%s' NÃO DECLARADA", line, variableName));
+        breakProgram();
     }
 
-    public static void vetOverflow(String name, int size){
-        System.out.println(String.format("TAMANHO DE VETOR NÃO SUPORTADO -> Nome do identificador: '%s' Tamanho em bytes: '%d'", name, size));
+    public static void vetOverflow(String name, int size, int line){
+        System.out.println(String.format("[%d] TAMANHO DE VETOR NÃO SUPORTADO -> Nome do identificador: '%s' Tamanho em bytes: '%d'", line, name, size));
+        breakProgram();
+    }
+
+    public static void incompatibleType(TokenType tokenTypeLeft, TokenType tokenTypeRight, int line){
+        System.out.println(String.format("[%d] TIPOS INCOMPATIVEIS -> %s com %s", line, tokenTypeLeft.toString(), tokenTypeRight.toString()));
+        breakProgram();
+    }
+
+    private static void breakProgram(){
+        System.out.println("COMPILAÇÃO TERMINADA DEVIDO A ERRO SEMÂNTICO!");
         System.exit(0);
     }
 }
