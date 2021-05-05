@@ -679,41 +679,6 @@ class ParserUtils {
 
         return size2;
     }
-
-    public static TokenType getType(ExpressionNode node){
-        TokenType tokenType = null;
-        if(node instanceof ArraySubscriptExpressionNode){
-            tokenType = getBinary(((ArraySubscriptExpressionNode) node).subscriptExpr);
-            if(tokenType == null)
-                return getLiteral(((ArraySubscriptExpressionNode) node).subscriptExpr);
-        }else if(node instanceof BinaryExpressionNode){
-            return getBinary(node);
-        }else if(node instanceof IntExpressionNode){
-            tokenType = getLiteral(node);
-        }
-
-        return tokenType;
-    }
-
-    private static TokenType getLiteral(ExpressionNode node){
-        if(node instanceof IntExpressionNode){
-            return TokenType.INTEGER;
-        } else if(node instanceof BooleanExpressionNode){
-            return TokenType.BOOLEAN_CONST;
-        }else if(node instanceof CharExpressionNode){
-            return TokenType.CHAR;
-        }
-
-        return null;
-    }
-
-    private static TokenType getBinary(ExpressionNode node){
-        if(node instanceof BinaryExpressionNode){
-            return getLiteral(((BinaryExpressionNode) node).rightExpression);
-        }
-
-        return null;
-    }
 }
 
 class Parser {
@@ -1050,7 +1015,7 @@ class Parser {
         }
 
         //Semantic Action
-        this.semantic.verifyTypeCompatibility(identifier, ParserUtils.getType(node.value));
+        this.semantic.verifyTypeCompatibility(identifier, semantic.getExpressionType(node.value));
         this.semantic.verifyClassCompatibility(identifier);
 
         return node;
@@ -1277,14 +1242,60 @@ class Semantic{
         }
     }
 
+    public TokenType getExpressionType(ExpressionNode node){
+        TokenType tokenTypeLeft = null;
+        TokenType tokenTypeRight = null;
+        TokenType tokenType = null;
+        if(node instanceof BinaryExpressionNode){
+            tokenTypeLeft = getExpressionType(((BinaryExpressionNode) node).leftExpression);
+            tokenTypeRight = getExpressionType(((BinaryExpressionNode) node).rightExpression);
+
+            if(tokenTypeLeft != null && tokenTypeRight != null) {
+                System.out.println(String.format("TYPES: '%s' com '%s'", tokenTypeLeft.toString(), tokenTypeRight.toString()));
+                verifyTypeCompatibility(tokenTypeLeft, tokenTypeRight);
+                tokenType = getNodeType(tokenTypeLeft,tokenTypeRight);
+            }
+        }
+        if(node instanceof IntExpressionNode){
+            tokenType = TokenType.INT;
+        }else if(node instanceof BooleanExpressionNode){
+            tokenType = TokenType.BOOLEAN;
+        }else if(node instanceof CharExpressionNode){
+            tokenType = TokenType.CHAR;
+        }else if(node instanceof StringExpressionNode){
+            tokenType = TokenType.STRING;
+        }else if(node instanceof IdentifierExpressionNode){
+            tokenType = TokenType.IDENTIFIER;
+        }
+
+        return tokenType;
+    }
+
     private void verifyTypeCompatibility(TokenType tokenTypeLeft, TokenType tokenTypeRight){
-        if(tokenTypeLeft == TokenType.INT && (tokenTypeRight != TokenType.INTEGER && tokenTypeRight != TokenType.HEX_INTEGER)){
+        if(tokenTypeLeft == TokenType.INT && (tokenTypeRight != TokenType.INTEGER
+                && tokenTypeRight != TokenType.HEX_INTEGER && tokenTypeRight != TokenType.INT)){
             SemanticErros.incompatibleType(tokenTypeLeft, tokenTypeRight, lexer.line);
         }else if(tokenTypeLeft == TokenType.CHAR && (tokenTypeRight != TokenType.CHAR && tokenTypeRight != TokenType.STRING)){
             SemanticErros.incompatibleType(tokenTypeLeft, tokenTypeRight, lexer.line);
-        }else if(tokenTypeLeft == TokenType.BOOLEAN && tokenTypeRight != TokenType.BOOLEAN_CONST){
+        }else if(tokenTypeLeft == TokenType.BOOLEAN && (tokenTypeRight != TokenType.BOOLEAN
+                && tokenTypeRight != TokenType.BOOLEAN_CONST)){
             SemanticErros.incompatibleType(tokenTypeLeft, tokenTypeRight, lexer.line);
         }
+    }
+
+    private TokenType getNodeType(TokenType tokenTypeLeft, TokenType tokenTypeRight){
+        if(tokenTypeLeft == TokenType.INT && (tokenTypeRight == TokenType.INTEGER
+                || tokenTypeRight == TokenType.HEX_INTEGER || tokenTypeRight == TokenType.INT)){
+            return TokenType.INT;
+        }else if(tokenTypeLeft == TokenType.CHAR && (tokenTypeRight == TokenType.CHAR || tokenTypeRight == TokenType.STRING)){
+            return TokenType.CHAR;
+        }else if(tokenTypeLeft == TokenType.BOOLEAN && (tokenTypeRight == TokenType.BOOLEAN
+                || tokenTypeRight == TokenType.BOOLEAN_CONST)){
+            return TokenType.BOOLEAN;
+        }
+
+        SemanticErros.incompatibleType(tokenTypeLeft, tokenTypeRight, lexer.line);
+        return null;
     }
 
 
