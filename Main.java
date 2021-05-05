@@ -869,6 +869,9 @@ class Parser {
             IntExpressionNode intNode = (IntExpressionNode)size;
             vetSize = intNode.value;
 
+            //Semantic Action
+            this.semantic.verifyVetSize(identifier, ParserUtils.getTypeSize(tokenType, vetSize));
+
             eat(TokenType.RIGHT_BRACKET);
         }
 
@@ -1201,6 +1204,13 @@ class Semantic{
             SemanticErros.undeclaredVariable(symbolName, lexer.line);
     }
 
+    public void verifyVetSize(String symbolName, int size){
+        if(size > 8000){
+            SemanticErros.vetOverflow(symbolName, size);
+        }
+    }
+
+
     private boolean containsSymbol(String symbolName){
         Symbol symbol = symTable.getSymbol(symbolName);
 
@@ -1216,6 +1226,11 @@ class SemanticErros{
 
     public static void undeclaredVariable(String variableName, int line){
         System.out.println(String.format("VARIÁVEL '%s' NÃO DECLARADA -> Linha: %d", variableName, line));
+        System.exit(0);
+    }
+
+    public static void vetOverflow(String name, int size){
+        System.out.println(String.format("TAMANHO DE VETOR NÃO SUPORTADO -> Nome do identificador: '%s' Tamanho em bytes: '%d'", name, size));
         System.exit(0);
     }
 }
