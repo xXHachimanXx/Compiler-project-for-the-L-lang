@@ -2,10 +2,10 @@ import java.io.IOException;
 import java.io.PushbackReader;
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.LinkedList;
-import java.util.Scanner;
 import java.util.Map.Entry;
 import java.io.InputStreamReader;
+
+//TODO Verificar o tipo da váriavel que tá acessando [Semantic]
 
 enum TokenType {
     EOF,
@@ -986,6 +986,10 @@ class Parser {
         AssignStatementNode node;
         ExpressionNode subscriptExpr = null;
         String identifier = currentToken.value;
+
+        //Semantic Action
+        this.semantic.verifyDeclaredVariable(identifier);
+
         eat();
 
         if (currentToken.type == TokenType.LEFT_BRACKET) {
