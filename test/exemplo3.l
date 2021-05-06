@@ -1,17 +1,16 @@
 /* Exemplo de Programa na linguagem L */
 
-int n;
-boolean b;
-char c;
-int n1[3];
-char nome[40];
-final MAXITER=10;
+int max;
+int n[3], max:=0, i;
 
-main {
-/* Programa Principal */
-    c:='T';
-  write("Digite seu nome: ");
-  readln(nome);
-  for (n:=1; n<=MAXITER; n:=n+1)
-    writeln("Ola' ",nome);
+main
+{
+  for (i:=0; i<3; i:=i+1) {
+    write("Digite um numero: ");
+    readln(n[i]);
+  }
+  if (n[0] > n[1]) then {
+    if (n[0] > n[2]) then max:=3; else max:=n[2];
+  } else if (n[1] > n[2]) then max:=n[1]; else max:=n[2];
+  writeln("O maior numero e' ",max);
 }

@@ -31,13 +31,14 @@
     <property name="RunOnceActivity.OpenProjectViewOnStart" value="true" />
     <property name="RunOnceActivity.ShowReadmeOnStart" value="true" />
     <property name="last_opened_file_path" value="$PROJECT_DIR$" />
+    <property name="settings.editor.selected.configurable" value="editor.preferences.fonts.default" />
   </component>
   <component name="RunManager">
     <configuration name="Main" type="Application" factoryName="Application" temporary="true" nameIsGenerated="true">
       <option name="MAIN_CLASS_NAME" value="Main" />
       <module name="Compiler-project-for-the-L-lang" />
       <option name="REDIRECT_INPUT" value="true" />
-      <option name="INPUT_FILE" value="$PROJECT_DIR$/test/exemplo3.l" />
+      <option name="INPUT_FILE" value="$PROJECT_DIR$/test/exemplo1.l" />
       <method v="2">
         <option name="Make" enabled="true" />
       </method>
@@ -95,68 +96,68 @@
       <breakpoints>
         <line-breakpoint type="java-line">
           <url>file://$PROJECT_DIR$/Main.java</url>
-          <line>886</line>
+          <line>891</line>
           <option name="timeStamp" value="3" />
         </line-breakpoint>
         <line-breakpoint type="java-line">
           <url>file://$PROJECT_DIR$/Main.java</url>
-          <line>895</line>
+          <line>900</line>
           <option name="timeStamp" value="6" />
         </line-breakpoint>
         <line-breakpoint type="java-line">
           <url>file://$PROJECT_DIR$/Main.java</url>
-          <line>1034</line>
+          <line>1044</line>
           <option name="timeStamp" value="17" />
         </line-breakpoint>
         <line-breakpoint type="java-line">
           <url>file://$PROJECT_DIR$/Main.java</url>
-          <line>1025</line>
+          <line>1035</line>
           <option name="timeStamp" value="20" />
         </line-breakpoint>
         <line-breakpoint type="java-line">
           <url>file://$PROJECT_DIR$/Main.java</url>
-          <line>824</line>
+          <line>829</line>
           <option name="timeStamp" value="27" />
         </line-breakpoint>
         <line-breakpoint type="java-line">
           <url>file://$PROJECT_DIR$/Main.java</url>
-          <line>799</line>
+          <line>804</line>
           <option name="timeStamp" value="61" />
         </line-breakpoint>
         <line-breakpoint type="java-line">
           <url>file://$PROJECT_DIR$/Main.java</url>
-          <line>1261</line>
-          <option name="timeStamp" value="63" />
-        </line-breakpoint>
-        <line-breakpoint type="java-line">
-          <url>file://$PROJECT_DIR$/Main.java</url>
-          <line>1279</line>
+          <line>1284</line>
           <option name="timeStamp" value="65" />
         </line-breakpoint>
         <line-breakpoint type="java-line">
           <url>file://$PROJECT_DIR$/Main.java</url>
-          <line>1317</line>
+          <line>1333</line>
           <option name="timeStamp" value="69" />
         </line-breakpoint>
         <line-breakpoint type="java-line">
           <url>file://$PROJECT_DIR$/Main.java</url>
-          <line>1331</line>
+          <line>1347</line>
           <option name="timeStamp" value="70" />
         </line-breakpoint>
         <line-breakpoint type="java-line">
           <url>file://$PROJECT_DIR$/Main.java</url>
-          <line>1341</line>
+          <line>1361</line>
           <option name="timeStamp" value="71" />
         </line-breakpoint>
         <line-breakpoint type="java-line">
           <url>file://$PROJECT_DIR$/Main.java</url>
-          <line>1293</line>
+          <line>1303</line>
           <option name="timeStamp" value="74" />
         </line-breakpoint>
         <line-breakpoint enabled="true" type="java-line">
           <url>file://$PROJECT_DIR$/Main.java</url>
-          <line>1306</line>
-          <option name="timeStamp" value="78" />
+          <line>995</line>
+          <option name="timeStamp" value="77" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" type="java-line">
+          <url>file://$PROJECT_DIR$/Main.java</url>
+          <line>1324</line>
+          <option name="timeStamp" value="80" />
         </line-breakpoint>
       </breakpoints>
     </breakpoint-manager>
