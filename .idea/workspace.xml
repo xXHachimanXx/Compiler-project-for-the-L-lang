@@ -109,6 +109,7 @@
     <watches-manager>
       <configuration name="Application">
         <watch expression="ParserUtils.getType(node.value)" language="JAVA" />
+        <watch expression="currentToken.value" language="JAVA" />
       </configuration>
     </watches-manager>
   </component>

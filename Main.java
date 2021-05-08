@@ -685,8 +685,8 @@ class ParserUtils {
         return tokenType == TokenType.CHAR && size > 0;
     }
 
-    public static boolean isIntVet(Symbol s){
-        return s.symbolClass == SymbolClass.VAR && s.type == TokenType.INT && s.size > 0;
+    public static boolean isVet(Symbol s){
+        return s.symbolClass == SymbolClass.VAR && s.size > 0;
     }
 
     public static boolean isArithmetic(String operator){
@@ -876,7 +876,7 @@ class Parser {
         ) {
             if(node instanceof IdentifierExpressionNode){
                 //Semantic Action
-                if(ParserUtils.isIntVet(semantic.getDeclaredSymbol(((IdentifierExpressionNode) node).identifier))){
+                if(ParserUtils.isVet(semantic.getDeclaredSymbol(((IdentifierExpressionNode) node).identifier))){
                     SemanticErros.incompatibleTypes(lexer.line);
                 }
             }
@@ -904,7 +904,6 @@ class Parser {
         ExpressionNode value = null;
         eat(TokenType.IDENTIFIER);
         int vetSize = 0;
-        int varValue = 0;
 
         if (currentToken.type == TokenType.LEFT_BRACKET) {
             eat();
@@ -928,9 +927,7 @@ class Parser {
             if (value == null) tokenNotExpected();
 
             //Semantic Action
-            this.semantic.verifyDeclaredVariable(identifier);
-
-            return new VarDeclStatementNode(identifier, size, value);
+            this.semantic.verifyTypeCompatibility(tokenType, this.semantic.getExpressionType(value));
         }
 
         //Semantic Action
@@ -944,7 +941,6 @@ class Parser {
         node.varsDecl.add(parseVarDecl(tokenType));
         while (currentToken.type == TokenType.COMMA) {
             eat();
-            tokenType = currentToken.type;
             node.varsDecl.add(parseVarDecl(tokenType));
         }
         // System.out.println(node.getClass().getName());
@@ -1060,7 +1056,11 @@ class Parser {
             node = new IdentifierAssignStatementNode(identifier, parseExpression());
 
             //Semantic Action
-            if(ParserUtils.isIntVet(this.semantic.symTable.getSymbol(identifier))){
+            Symbol s = this.semantic.symTable.getSymbol(identifier);
+            if(s.type == TokenType.STRING && this.semantic.getExpressionType(node.value) != TokenType.STRING){
+                SemanticErros.incompatibleTypes(lexer.line);
+            }
+            if(s.type != TokenType.STRING && ParserUtils.isVet(s)){
                 SemanticErros.incompatibleTypes(lexer.line);
             }
         } else {
