@@ -685,6 +685,10 @@ class ParserUtils {
         return tokenType == TokenType.CHAR && size > 0;
     }
 
+    public static boolean isIntVet(Symbol s){
+        return s.symbolClass == SymbolClass.VAR && s.type == TokenType.INT && s.size > 0;
+    }
+
     public static boolean isArithmetic(String operator){
         return operator.equals("+") || operator.equals("-") || operator.equals("*") || operator.equals("/")
             || operator.equals("%");
@@ -804,6 +808,13 @@ class Parser {
             case NOT:
                 eat();
                 node = new UnaryExpressionNode(operator, parseUnaryExpression());
+                //Semantic Action
+                this.semantic.verifyOperatorCompatibility(
+                        ((UnaryExpressionNode)node).operator,
+                        TokenType.NOT,
+                        this.semantic.getExpressionType(((UnaryExpressionNode)node).expression)
+                );
+
                 break;
         }
         return node == null ? parsePrimaryExpression() : node;
@@ -819,7 +830,10 @@ class Parser {
         ) {
             String operator = currentToken.value;
             eat();
+
             node = new BinaryExpressionNode(node, operator, parseUnaryExpression());
+
+            this.semantic.verifyTypeCompability((BinaryExpressionNode)node); //Semantic ACtion
         }
         return node;
     }
@@ -842,9 +856,10 @@ class Parser {
         ) {
             String operator = currentToken.value;
             eat();
-            node = new BinaryExpressionNode(
-                    node, operator, parseMultiplicativeExpression()
-            );
+
+            node = new BinaryExpressionNode(node, operator,
+                    parseMultiplicativeExpression());
+            this.semantic.verifyTypeCompability((BinaryExpressionNode)node); //Semantic Action
         }
         return node;
     }
@@ -859,10 +874,21 @@ class Parser {
                         || currentToken.type == TokenType.SMALLER_OR_EQUAL
                         || currentToken.type == TokenType.GREATER_OR_EQUAL
         ) {
+            if(node instanceof IdentifierExpressionNode){
+                //Semantic Action
+                if(ParserUtils.isIntVet(semantic.getDeclaredSymbol(((IdentifierExpressionNode) node).identifier))){
+                    SemanticErros.incompatibleTypes(lexer.line);
+                }
+            }
+
             String operator = currentToken.value;
             eat();
+
             node = new BinaryExpressionNode(node, operator, parseAdditiveExpression());
+
+            this.semantic.verifyTypeCompability((BinaryExpressionNode) node); //Semantic Action
         }
+
         return node;
     }
 
@@ -903,13 +929,13 @@ class Parser {
 
             //Semantic Action
             this.semantic.verifyDeclaredVariable(identifier);
-            this.semantic.verifyTypeCompatibility(identifier, currentTokenType);
 
             return new VarDeclStatementNode(identifier, size, value);
         }
 
         //Semantic Action
         this.semantic.addSymbol(new Symbol(identifier, SymbolClass.VAR, tokenType, vetSize));
+
         return new VarDeclStatementNode(identifier, size, value);
     }
 
@@ -1032,6 +1058,11 @@ class Parser {
 
         if (subscriptExpr == null) {
             node = new IdentifierAssignStatementNode(identifier, parseExpression());
+
+            //Semantic Action
+            if(ParserUtils.isIntVet(this.semantic.symTable.getSymbol(identifier))){
+                SemanticErros.incompatibleTypes(lexer.line);
+            }
         } else {
             node = new ArraySubscriptAssignStatementNode(
                     identifier, subscriptExpr, parseExpression()
@@ -1039,7 +1070,7 @@ class Parser {
         }
 
         //Semantic Action
-        this.semantic.verifyTypeCompatibility(identifier, semantic.getExpressionType(node.value));
+        this.semantic.verifyTypeCompability(identifier, semantic.getExpressionType(node.value));
         this.semantic.verifyClassCompatibility(identifier);
 
         return node;
@@ -1238,7 +1269,7 @@ class Semantic{
         }
     }
 
-    private Symbol getDeclaredSymbol(String symbolName){
+    public Symbol getDeclaredSymbol(String symbolName){
         Symbol symbol = symTable.getSymbol(symbolName);
 
         if(symbol == null){
@@ -1257,12 +1288,6 @@ class Semantic{
         if(size > 8000){
             SemanticErros.vetOverflow(symbolName, size, lexer.line);
         }
-    }
-
-    public void verifyTypeCompatibility(String symbolName, TokenType tokenType){
-        Symbol symbol = getDeclaredSymbol(symbolName);
-
-        verifyTypeCompatibility(symbol.type, tokenType);
     }
 
     public void verifyClassCompatibility(String symbolName){
@@ -1290,23 +1315,20 @@ class Semantic{
             String operator = ((BinaryExpressionNode) node).operator;
             if(ParserUtils.isRelational(operator)){
                 tokenType = TokenType.BOOLEAN;
-                verifyTypeCompatibility(tokenTypeLeft, tokenTypeRight);
             }
             else if(tokenTypeLeft != null && tokenTypeRight != null) {
                 System.out.println(String.format("TYPES: '%s' com '%s'", tokenTypeLeft.toString(), tokenTypeRight.toString()));
 
-                verifyTypeCompatibility(tokenTypeLeft, tokenTypeRight);
-                verifyOperatorCompatibility(((BinaryExpressionNode) node).operator, tokenTypeLeft, tokenTypeRight);
-
                 tokenType = getNodeType(tokenTypeLeft,tokenTypeRight);
             }
+
         }else if(node instanceof ArraySubscriptExpressionNode){
             tokenType = getExpressionType(((ArraySubscriptExpressionNode) node).subscriptExpr);
 
             if(tokenType != TokenType.INT)
                 SemanticErros.incompatibleType(tokenType, TokenType.INT, lexer.line);
 
-            tokenType = symTable.getSymbol(((ArraySubscriptExpressionNode) node).identifier).type;
+            tokenType = getDeclaredSymbol(((ArraySubscriptExpressionNode) node).identifier).type;
         }else if(node instanceof IdentifierExpressionNode){
             Symbol s = getDeclaredSymbol(((IdentifierExpressionNode) node).identifier);
 
@@ -1330,39 +1352,74 @@ class Semantic{
         return tokenType;
     }
 
-    private void verifyTypeCompatibility(TokenType tokenTypeLeft, TokenType tokenTypeRight){
+    public void verifyTypeCompability(String identifier, TokenType tokenTypeRight){
+        Symbol s = getDeclaredSymbol(identifier);
+
+        verifyTypeCompatibility(s.type, tokenTypeRight);
+    }
+
+    public void verifyTypeCompability(BinaryExpressionNode node){
+        TokenType tokenTypeLeft = getExpressionType(node.leftExpression);
+        TokenType tokenTypeRight = getExpressionType(node.rightExpression);
+
+        verifyOperatorCompatibility(node.operator, tokenTypeLeft, tokenTypeRight);
+        verifyTypeCompatibility(tokenTypeLeft, tokenTypeRight);
+
+        if(tokenTypeLeft != tokenTypeRight){
+            SemanticErros.incompatibleTypes(lexer.line);
+        }
+
+    }
+
+    public void verifyTypeCompatibility(TokenType tokenTypeLeft, TokenType tokenTypeRight){
         if(tokenTypeLeft == TokenType.INT && (tokenTypeRight != TokenType.INTEGER
-                && tokenTypeRight != TokenType.HEX_INTEGER && tokenTypeRight != TokenType.INT)){
+                && tokenTypeRight != TokenType.HEX_INTEGER && tokenTypeRight != TokenType.INT))
+        {
             SemanticErros.incompatibleType(tokenTypeLeft, tokenTypeRight, lexer.line);
-        }else if(tokenTypeLeft == TokenType.CHAR && tokenTypeRight != TokenType.CHAR){
+        }else if(tokenTypeLeft == TokenType.CHAR && tokenTypeRight != TokenType.CHAR)
+        {
             SemanticErros.incompatibleType(tokenTypeLeft, tokenTypeRight, lexer.line);
-        }else if(tokenTypeLeft == TokenType.STRING && (tokenTypeRight != TokenType.CHAR && tokenTypeRight != TokenType.STRING)){
+        }else if(tokenTypeLeft == TokenType.STRING
+                && (tokenTypeRight != TokenType.CHAR && tokenTypeRight != TokenType.STRING))
+        {
             SemanticErros.incompatibleType(tokenTypeLeft, tokenTypeRight, lexer.line);
         }else if(tokenTypeLeft == TokenType.BOOLEAN && (tokenTypeRight != TokenType.BOOLEAN
-                && tokenTypeRight != TokenType.BOOLEAN_CONST)){
+                && tokenTypeRight != TokenType.BOOLEAN_CONST))
+        {
             SemanticErros.incompatibleType(tokenTypeLeft, tokenTypeRight, lexer.line);
         }
     }
 
-    private void verifyOperatorCompatibility(String operator, TokenType tokenTypeLeft, TokenType tokenTypeRight){
+    public void verifyOperatorCompatibility(String operator, TokenType tokenTypeLeft, TokenType tokenTypeRight){
         if(operator != null){
-            if(ParserUtils.isArithmetic(operator) && tokenTypeRight != TokenType.INT){
+            if(ParserUtils.isArithmetic(operator) && tokenTypeRight != TokenType.INT)
+            {
                 SemanticErros.incompatibleOperator(operator, tokenTypeLeft, tokenTypeRight, lexer.line);
             }
-            if(tokenTypeLeft == TokenType.STRING && operator.equals("=") && (tokenTypeRight != TokenType.STRING)){
+            if(tokenTypeLeft == TokenType.STRING && operator.equals("=") && (tokenTypeRight != TokenType.STRING))
+            {
                 SemanticErros.incompatibleOperator(operator, tokenTypeLeft, tokenTypeRight, lexer.line);
             }
-            if(ParserUtils.isLogical(operator) && tokenTypeRight != TokenType.BOOLEAN) {
+            if(ParserUtils.isLogical(operator) && tokenTypeRight != TokenType.BOOLEAN)
+            {
                 SemanticErros.incompatibleOperator(operator, tokenTypeLeft, tokenTypeRight, lexer.line);
+            }
+            if(ParserUtils.isRelational(operator) && (tokenTypeLeft != tokenTypeRight))
+            {
+                SemanticErros.incompatibleType(tokenTypeLeft, tokenTypeRight, lexer.line);
             }
         }
     }
 
     private void verifyUnaryOperator(String operator, TokenType tokenTypeRight){
         if(operator.equals("not") && tokenTypeRight != TokenType.BOOLEAN)
+        {
             SemanticErros.incompatibleType(TokenType.NOT, tokenTypeRight, lexer.line);
+        }
         if(ParserUtils.isArithmetic(operator) && (tokenTypeRight != TokenType.INT))
+        {
             SemanticErros.incompatibleType(TokenType.INT, tokenTypeRight, lexer.line);
+        }
     }
 
     private TokenType getNodeType(TokenType tokenTypeLeft, TokenType tokenTypeRight){
@@ -1414,6 +1471,7 @@ class SemanticErros{
     public static void incompatibleOperator(String operator, TokenType tokenTypeLeft, TokenType tokenTypeRight, int line){
         System.out.println(String.format("[%d] OPERADOR '%s' INVÁLIDOS PARA OS TIPOS '%s' e '%s'",
                 line, operator, tokenTypeLeft.toString(), tokenTypeRight.toString()));
+        breakProgram();
     }
 
     public static void changeConst(String symbolName, int line){
