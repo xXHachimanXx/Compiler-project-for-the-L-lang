@@ -1,7 +1,10 @@
 import java.io.IOException;
 import java.io.PushbackReader;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map.Entry;
 import java.io.InputStreamReader;
 
@@ -445,6 +448,7 @@ abstract class StatementNode extends Node {
 }
 
 abstract class ExpressionNode extends Node {
+    int end;
 }
 
 class BooleanExpressionNode extends ExpressionNode {
@@ -479,6 +483,7 @@ class ParenthesizedExpressionNode extends ExpressionNode {
     ExpressionNode expression;
     ParenthesizedExpressionNode(ExpressionNode expression) {
         this.expression = expression;
+        this.end = expression.end;
     }
 }
 
@@ -670,13 +675,16 @@ class ParserUtils {
             case BOOLEAN: size2 = 1; break;
             case BOOLEAN_CONST: size2 = 1; break;
             case CHAR: size2 = 1; break;
-            case IDENTIFIER: break;
-            default :
-                System.out.println("ERROR: Type not supported");
+            case STRING: size2 = 1; break;
+            default:
+                // System.out.printf("ERROR: Type not supported: %s, size = %d\n", type.toString(), size);
+                break;
         }
 
         if(size != 0)
             size2 *= size;
+
+        if(type == TokenType.STRING) size2++; // Dólar
 
         return size2;
     }
@@ -708,12 +716,13 @@ class Parser {
     Lexer lexer;
     Token currentToken;
     Semantic semantic;
-
+    CodeGenerator codegen;
 
     Parser(Lexer lexer) throws IOException {
         this.lexer = lexer;
         this.currentToken = lexer.next();
         this.semantic = new Semantic(lexer);
+        this.codegen = new CodeGenerator();
     }
 
     void tokenNotExpected() {
@@ -740,28 +749,37 @@ class Parser {
         ExpressionNode node = null;
         switch (currentToken.type) {
             case BOOLEAN_CONST:
-                node = new BooleanExpressionNode(currentToken.value.equals("TRUE"));
+                boolean bvalue = currentToken.value.equals("TRUE");
+                node = new BooleanExpressionNode(bvalue);
+                node.end = this.codegen.createBoolTemp(bvalue);
                 eat();
                 break;
 
             case CHAR:
-                node = new CharExpressionNode(currentToken.value.charAt(0));
+                char cvalue = currentToken.value.charAt(0);
+                node = new CharExpressionNode(cvalue);
+                node.end = this.codegen.createCharTemp(cvalue);
                 eat();
                 break;
 
             case INTEGER:
-                node = new IntExpressionNode(Integer.parseInt(currentToken.value));
+                int ivalue = Integer.parseInt(currentToken.value);
+                node = new IntExpressionNode(ivalue);
+                node.end = this.codegen.createIntTemp(ivalue);
                 eat();
                 break;
 
             case HEX_INTEGER:
                 String hexStr = currentToken.value.substring(1, 3);
-                node = new IntExpressionNode(Integer.parseInt(hexStr, 16));
+                int hivalue = Integer.parseInt(hexStr, 16);
+                node = new IntExpressionNode(hivalue);
+                node.end = this.codegen.createIntTemp(hivalue);
                 eat();
                 break;
 
             case STRING:
                 node = new StringExpressionNode(currentToken.value);
+                node.end = this.codegen.createStrTemp(currentToken.value);
                 eat();
                 break;
         }
@@ -791,8 +809,13 @@ class Parser {
 
                 if (subscriptExpr == null) {
                     node = new IdentifierExpressionNode(identifier);
+                    node.end = this.semantic.getDeclaredSymbol(identifier).address;
                 } else {
                     node = new ArraySubscriptExpressionNode(identifier, subscriptExpr);
+                    node.end = this.codegen.getArrayElement(
+                        this.semantic.getDeclaredSymbol(identifier),
+                        subscriptExpr.end
+                    );
                 }
                 break;
 
@@ -807,7 +830,9 @@ class Parser {
         switch (currentToken.type) {
             case NOT:
                 eat();
-                node = new UnaryExpressionNode(operator, parseUnaryExpression());
+                ExpressionNode expr = parseUnaryExpression();
+                node = new UnaryExpressionNode(operator, expr);
+                node.end = this.codegen.negate(expr.end);
                 //Semantic Action
                 this.semantic.verifyOperatorCompatibility(
                         ((UnaryExpressionNode)node).operator,
@@ -857,9 +882,12 @@ class Parser {
             String operator = currentToken.value;
             eat();
 
-            node = new BinaryExpressionNode(node, operator,
-                    parseMultiplicativeExpression());
-            this.semantic.verifyTypeCompability((BinaryExpressionNode)node); //Semantic Action
+            node = new BinaryExpressionNode(node, operator, parseMultiplicativeExpression());
+            BinaryExpressionNode binaryNode = (BinaryExpressionNode) node;
+            this.semantic.verifyTypeCompability(binaryNode); //Semantic Action
+            node.end = this.codegen.doAdditiveExpression(
+                operator, binaryNode.leftExpression.end, binaryNode.rightExpression.end
+            );
         }
         return node;
     }
@@ -909,6 +937,8 @@ class Parser {
             eat();
             size = parseConstExpression();
             if (size == null) tokenNotExpected();
+            if (!size.getClass().equals(IntExpressionNode.class))
+                SemanticErros.incompatibleTypes(lexer.line);
 
             IntExpressionNode intNode = (IntExpressionNode)size;
             vetSize = intNode.value;
@@ -931,7 +961,9 @@ class Parser {
         }
 
         //Semantic Action
-        this.semantic.addSymbol(new Symbol(identifier, SymbolClass.VAR, tokenType, vetSize));
+        Symbol s = new Symbol(identifier, SymbolClass.VAR, tokenType, value, vetSize);
+        this.semantic.addSymbol(s);
+        this.codegen.declSymbol(s);
 
         return new VarDeclStatementNode(identifier, size, value);
     }
@@ -958,7 +990,10 @@ class Parser {
         value = parseConstExpression();
 
         if (value == null) tokenNotExpected();
-        this.semantic.addSymbol(new Symbol(identifier, SymbolClass.CONST, tokenType, 0)); //Semantic Action
+
+        Symbol s = new Symbol(identifier, SymbolClass.CONST, tokenType, value, 0);
+        this.semantic.addSymbol(s); //Semantic Action
+        this.codegen.declSymbol(s);
 
         return new ConstDeclStatementNode(identifier, value);
     }
@@ -976,10 +1011,14 @@ class Parser {
     WriteStatementNode parseWriteStatement() throws IOException {
         WriteStatementNode node = new WriteStatementNode();
         eat(TokenType.LEFT_PAREN);
-        node.args.add(parseExpression());
+        ExpressionNode expr = parseExpression();
+        node.args.add(expr);
+        this.codegen.writeExpression(expr.end, this.semantic.getExpressionType(expr));
         while (currentToken.type == TokenType.COMMA) {
             eat(TokenType.COMMA);
-            node.args.add(parseExpression());
+            expr = parseExpression();
+            node.args.add(expr);
+            this.codegen.writeExpression(expr.end, this.semantic.getExpressionType(expr));
         }
         eat(TokenType.RIGHT_PAREN);
         return node;
@@ -988,11 +1027,16 @@ class Parser {
     WritelnStatementNode parseWritelnStatement() throws IOException {
         WritelnStatementNode node = new WritelnStatementNode();
         eat(TokenType.LEFT_PAREN);
-        node.args.add(parseExpression());
+        ExpressionNode expr = parseExpression();
+        node.args.add(expr);
+        this.codegen.writeExpression(expr.end, this.semantic.getExpressionType(expr));
         while (currentToken.type == TokenType.COMMA) {
             eat(TokenType.COMMA);
-            node.args.add(parseExpression());
+            expr = parseExpression();
+            node.args.add(expr);
+            this.codegen.writeExpression(expr.end, this.semantic.getExpressionType(expr));
         }
+        this.codegen.write(this.codegen.newLineTemp);
         eat(TokenType.RIGHT_PAREN);
         return node;
     }
@@ -1233,7 +1277,7 @@ class Parser {
         eat(TokenType.RIGHT_BRACES);
         eat(TokenType.EOF);
 
-        System.out.println(this.semantic.symTable);
+        // System.out.println(this.semantic.symTable);
 
         return node;
     }
@@ -1244,7 +1288,6 @@ class Parser {
 class Semantic{
     public SymTable symTable;
     public Lexer lexer;
-    public int address = 16384;
 
     public Semantic(Lexer lexer){
         this.symTable = new SymTable();
@@ -1255,10 +1298,6 @@ class Semantic{
         Symbol symbol = symTable.getSymbol(s.getName());
 
         if(symbol == null){
-            int size = ParserUtils.getTypeSize(s.type, s.size);
-            s.address = address;
-            address+= size;
-
             if(ParserUtils.isString(s.type, s.size))
                 s.type = TokenType.STRING;
 
@@ -1317,7 +1356,7 @@ class Semantic{
                 tokenType = TokenType.BOOLEAN;
             }
             else if(tokenTypeLeft != null && tokenTypeRight != null) {
-                System.out.println(String.format("TYPES: '%s' com '%s'", tokenTypeLeft.toString(), tokenTypeRight.toString()));
+                // System.out.println(String.format("TYPES: '%s' com '%s'", tokenTypeLeft.toString(), tokenTypeRight.toString()));
 
                 tokenType = getNodeType(tokenTypeLeft,tokenTypeRight);
             }
@@ -1495,12 +1534,20 @@ class Symbol{
     public SymbolClass symbolClass;
     public TokenType type;
     public int size;
+    public ExpressionNode value;
     public int address;
 
-    public Symbol(String name, SymbolClass symbolClass, TokenType type, int size){
+    public Symbol(
+        String name,
+        SymbolClass symbolClass,
+        TokenType type,
+        ExpressionNode value,
+        int size
+    ){
         this.name = name;
         this.symbolClass = symbolClass;
         this.type = type;
+        this.value = value;
         this.size = size;
     }
 
@@ -1528,9 +1575,12 @@ class SymTable{
     @Override
     public String toString(){
         String str = "SYMBOL TABLE\n";
+        str += String.format("%-15s  %-12s  %-8s  %-5s  %-7s\n",
+            "NAME", "SYMBOL CLASS", "TYPE", "SIZE", "ADDRESS");
+
         for (Entry<String, Symbol> entry : symTable.entrySet()) {
             Symbol s = entry.getValue();
-            str+= String.format("NAME: %s SYMBOL CLASS: %s TYPE: %s SIZE: %d ADDRESS: %d \n",
+            str+= String.format("%-15s  %-12s  %-8s  %-5d  %-7d\n",
                     s.getName(), s.symbolClass, s.type, s.size, s.address);
         }
 
@@ -1538,84 +1588,192 @@ class SymTable{
     }
 }
 
-// class CodeGenerator {
-//     int varCounter = 0;
-//     int stackSize = 0;
-//     List<String> dataSection = new ArrayList<>();
-//     List<String> codeSection = new ArrayList<>();
+class CodeGenerator {
+    List<String> dataSection = new ArrayList<>();
+    List<String> codeSection = new ArrayList<>();
+    int address = 16384; // Next variable address relatively to DS register
+    int temp = 0; // Adress of the last temporary value relatively to DS register
+    int newLineTemp = -1;
 
-//     private void addData(String line, int size) {
-//         dataSection.add(line);
-//         stackSize += size;
-//     }
+    public CodeGenerator() {
+        newLineTemp = address;
+        addData("db 13, 10, '$'");
+        address += 3;
+    }
 
-//     private void addCode(String line) {
-//         codeSection.add(line);
-//     }
+    private void addData(String line) {
+        dataSection.add("    " + line);
+    }
 
-//     public void generate(WriteStatementNode node) {
-//         String str = "";
-//         for (ExpressionNode arg : node.args) {
-//             Class<?> argClass = arg.getClass();
-//             if (argClass.equals(StringExpressionNode.class)) {
-//                 StringExpressionNode aux = (StringExpressionNode) arg;
-//                 str += aux.value;
-//             } else if (argClass.equals(IntExpressionNode.class)) {
-//                 IntExpressionNode aux = (IntExpressionNode) arg;
-//                 str += aux.value;
-//             }
-//         }
-//         addData(
-//             String.format("var%d db \"%s\", '$'", varCounter, str),
-//             str.getBytes().length + 1
-//         );
-//         addCode(String.format("print var%d", varCounter));
-//         varCounter++;
-//     }
+    private void addCode(String line) {
+        codeSection.add("    " + line);
+    }
 
-//     public void generate(WritelnStatementNode node) {
-//         WriteStatementNode auxNode = new WriteStatementNode();
-//         auxNode.args = new ArrayList<>(node.args);
-//         auxNode.args.add(new StringExpressionNode("\n"));
-//     }
+    public int createBoolTemp(boolean value) {
+        int addr = temp;
+        addCode(String.format("createBoolTemp %d %d", value ? 1 : 0, addr));
+        temp += 1;
+        return addr;
+    }
 
-//     public void generate(StatementNode node) {
-//         Class<?> nodeClass = node.getClass();
-//         if (nodeClass.equals(WriteStatementNode.class))
-//             generate((WriteStatementNode) node);
-//     }
+    public int createCharTemp(char value) {
+        int addr = temp;
+        if (value >= ' ' && value <= '~')
+            addCode(String.format("createCharTemp '%c' %d", value, addr));
+        else
+            addCode(String.format("createCharTemp %d %d", (int) value, addr));
+        temp += 1;
+        return addr;
+    }
 
-//     public void generate(ArrayList<StatementNode> nodes) {
-//         for (StatementNode node : nodes) generate(node);
-//     }
+    public int createIntTemp(int value) {
+        int addr = temp;
+        addCode(String.format("createIntTemp %d, %d", value, addr));
+        temp += 2;
+        return addr;
+    }
 
-//     public String generate(ProgramNode node) {
-//         generate(node.stmts);
-//         return String.format("""
-// .model small
-// .stack %d
+    public int createStrTemp(String value) {
+        int addr = address;
+        addData(String.format("db \"%s\", '$'", value));
+        address += value.length() + 1;
+        return addr;
+    }
 
-// print macro msg
-//     lea dx, msg
-//     mov ah, 09h
-//     int 21h
-// endm
+    public int getArrayElement(Symbol arr, int subscriptExprEnd) {
+        int addr = temp;
+        if (arr.type == TokenType.INT) {
+            addCode(String.format("getIntArrayElement %d, %d, %d", arr.address, subscriptExprEnd, addr));
+            temp += 2;
+        } else {
+            addCode(String.format("getNonIntArrayElement %d, %d, %d", arr.address, subscriptExprEnd, addr));
+            temp += 1;
+        }
+        return addr;
+    }
 
-// .data
-// %s
+    public int negate(int valuePtr) {
+        int addr = temp;
+        addCode(String.format("negate %d %d", valuePtr, addr));
+        temp++;
+        return addr;
+    }
 
-// .code
-//     MOV AX, @DATA
-//     MOV DS, AX
+    public int doAdditiveExpression(String operator, int op1Addr, int op2Addr) {
+        int addr = temp;
+        switch (operator) {
+            case "+":
+                addCode(String.format("sum %d %d %d", op1Addr, op2Addr, addr));
+                temp += 2;
+                break;
 
-//     %s
+            case "-":
+                addCode(String.format("subtract %d %d %d", op1Addr, op2Addr, addr));
+                temp += 2;
+                break;
+    
+            case "or":
+                temp += 1;
+                break;
+        }
+        return addr;
+    }
 
-//     MOV AH, 4CH ; Exit
-//     INT 21H
-// end
-// """, stackSize, String.join("\n", dataSection), String.join("\n", codeSection));
-//     }
-// }
+    public void write(int addr) {
+        addCode(String.format("print %d", addr));
+    }
+
+    private int charToStr(int addr) {
+        int strAddr = createStrTemp("0");
+        addCode(String.format("charToStr %d %d", addr, strAddr));
+        return strAddr;
+    }
+
+    private int boolToStr(int addr) {
+        int strAddr = createStrTemp("0");
+        addCode(String.format("boolToStr %d %d", addr, strAddr));
+        return strAddr;
+    }
+
+    private int intToStr(int addr) {
+        int strAddr = createStrTemp("-00000");
+        addCode(String.format("intToStr %d %d", addr, strAddr));
+        return strAddr;
+    }
+
+    public void writeExpression(int addr, TokenType type) {
+        switch (type) {
+            case STRING: write(addr); break;
+            case CHAR: write(charToStr(addr)); break;
+            case BOOLEAN: write(boolToStr(addr)); break;
+            case INT: write(intToStr(addr)); break;
+            default:
+                // System.err.println("WRITE RECEBEU EXPRESSAO COM TIPO ERRADO");
+                break;
+        }
+    }
+
+    public void declSymbol(Symbol s) {
+        int size = ParserUtils.getTypeSize(s.type, s.size);
+        s.address = address;
+        address += size;
+        if (s.size > 0) {
+            if (s.type == TokenType.INT)
+                addData(String.format("%s dw %d DUP(?)", s.name, s.size));
+            else
+                addData(String.format("%s db %d DUP(?)", s.name, s.size));
+        }
+        else declNonVetSymbol(s);
+    }
+
+    private void declNonVetSymbol(Symbol s) {
+        if (s.type == TokenType.INT) {
+            IntExpressionNode expr = (IntExpressionNode) s.value;
+            if (expr == null)
+                addData(String.format("%s dw %d", s.name, 0));
+            else {
+                int value = expr.value;
+                addData(String.format("%s dw %d", s.name, value));
+            }
+        }
+        else if (s.type == TokenType.CHAR) {
+            CharExpressionNode expr = (CharExpressionNode) s.value;
+            if (expr == null)
+                addData(String.format("%s db %d", s.name, 0));
+            else {
+                char value = expr.value;
+                if (value >= ' ' && value <= '~')
+                    addData(String.format("%s db '%c'", s.name, value));
+                else
+                    addData(String.format("%s db %d", s.name, (int) value));
+            }
+        }
+        else if (s.type == TokenType.BOOLEAN) {
+            BooleanExpressionNode expr = (BooleanExpressionNode) s.value;
+            if (expr == null)
+                addData(String.format("%s db %d", s.name, 0));
+            else {
+                boolean value = expr.value;
+                addData(String.format("%s db %d", s.name, value ? 1 : 0));
+            }
+        }
+    }
+
+    @Override
+    public String toString() {
+        String str = null;
+        try {
+            str = String.format(
+                new String(Files.readAllBytes(Paths.get("template.asm"))),
+                String.join("\r\n", dataSection),
+                String.join("\r\n", codeSection)
+            );
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return str;
+    }
+}
 
 public class Main {
     public static void main(String[] args) throws IOException {
@@ -1636,8 +1794,10 @@ public class Main {
         //     // System.out.printf("id = %s, lexem = '%s'\n", tok.type.name(), tok.value);
         //     tok = lexer.next();
         // }
-        ProgramNode node = new Parser(lexer).parseProgram();
+        Parser parser = new Parser(lexer);
+        ProgramNode node = parser.parseProgram();
+        System.out.println(parser.codegen);
         // System.out.printf(new CodeGenerator().generate(node));
-        System.out.printf("%d linhas compiladas.\n", lexer.line);
+        // System.out.printf("%d linhas compiladas.\n", lexer.line);
     }
 }
