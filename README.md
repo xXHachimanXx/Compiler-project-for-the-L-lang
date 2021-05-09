@@ -9,7 +9,7 @@ Our generated assembly is compatible with the 8086 processor with registers of 1
 Compiling the L language to .asm on Linux:
 
 ```
-javac Main.java && java Main < exemplo1.l > exemplo1.asm; rm *.class
+javac Main.java && java Main < test/simple.l > 8086/simple.asm; rm *.class
 ```
 
 ## Transforming the .asm file to an .exe file
@@ -21,10 +21,14 @@ Inside DosBox run:
 ```
 mount c: /COMPLETE/PATH/TO/THE/8086/FOLDER/ON/YOUR/COMPUTER
 c:
-masm /L exemplo1.asm
-link exemplo1.obj
-exemplo1.exe
+masm /L simple.asm
+link simple.obj
+simple.exe
 ```
+
+You can refresh the file system running `rescan`.
+
+If you wanna **debug** the .exe file, you can simple run `debug simple.exe`, then, inside the debugger, use `t` to go to next line, `r` to show registers and `d ds:0` to show 128 memory positions from the start of the data segment. More commands can be found on https://docs.microsoft.com/en-us/previous-versions/tn-archive/cc722863(v=technet.10)?redirectedfrom=MSDN.
 
 ## Language Grammar
 
@@ -120,4 +124,7 @@ EXPRESSION ::= RELATIONAL_EXPRESSION
 - [Compilers - Federal University of São Carlos](https://www2.dc.ufscar.br/~mario/ensino/2018s1/compiladores1/)
 - [8086 Assembly Language](https://www.youtube.com/watch?v=ThUSyV81tIc&list=PLajZfknhluUSY6weDgx3xYuRsaXUwU8mh)
 - [Running MASM](https://users.cs.fiu.edu/~downeyt/cop3402/runmasm.html)
+- [MASM Debugger](https://docs.microsoft.com/en-us/previous-versions/tn-archive/cc722863(v=technet.10)?redirectedfrom=MSDN)
 - [8086 assembly interrupt codes](http://www.gabrielececchetti.it/Teaching/CalcolatoriElettronici/Docs/i8086_and_DOS_interrupts.pdf)
+- [8086 assembler directives & macros](https://www.sakshieducation.com/Story.aspx?nid=93723)
+- [8086 addressing modes](https://www.ic.unicamp.br/~celio/mc404s2-03/addr_modes/intel_addr.html)
