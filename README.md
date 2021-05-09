@@ -9,7 +9,7 @@ Our generated assembly is compatible with the 8086 processor with registers of 1
 Compiling the L language to .asm on Linux:
 
 ```
-javac Main.java && java Main < test/simple.l > 8086/simple.asm; rm *.class
+javac -encoding "UTF-8" Main.java && java Main < test/simple.l > 8086/simple.asm; rm *.class
 ```
 
 ## Transforming the .asm file to an .exe file
