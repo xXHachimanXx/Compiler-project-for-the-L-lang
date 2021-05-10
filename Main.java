@@ -358,11 +358,13 @@ class Lexer {
         } while (c != '/');
     }
 
-    void skipComments() throws IOException {
+    boolean skipComments() throws IOException {
         char c = read();
-        if (c == '/') skipSingleLineComment();
-        else if (c == '*') skipMultiLineComment();
-        else reader.unread(c);
+        if (c == '/') { skipSingleLineComment(); return true; }
+        else if (c == '*') { skipMultiLineComment(); return true; }
+        else { reader.unread(c); }
+
+        return false;
     }
 
     char skipSpacesAndComments(char c) throws IOException {
@@ -371,10 +373,13 @@ class Lexer {
                 if (c == '\n') line++;
                 c = skipSpaces();
             }
+
             if (c == '/') {
-                skipComments();
-                c = read();
+                if(skipComments())
+                    c = read();
+                else break;
             }
+
             assertValidChar(c);
         }
         return c;
