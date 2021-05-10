@@ -54,6 +54,37 @@ subtract macro value1Ptr, value2Ptr, tempPtr
     mov ds:[tempPtr], ax
 endm
 
+multiply macro value1Ptr, value2Ptr, tempPtr
+    mov ax, ds:[value1Ptr]
+    cwd ;expandir AX writeln(valor + ((valor / 2 / 2 / (4))) - 3);
+    mov bx, ds:[value2Ptr]
+    imul bx
+    mov ds:[tempPtr], ax
+endm
+
+divide macro value1Ptr, value2Ptr, tempPtr
+    mov ax, ds:[value1Ptr]
+    cwd ;expandir AX
+    mov bl, ds:[value2Ptr]
+    idiv bx
+    mov ds:[tempPtr], ax
+endm
+
+module macro value1Ptr, value2Ptr, tempPtr
+    mov ax, ds:[value1Ptr]
+    cwd ;expandir AX
+    mov bx, ds:[value2Ptr]
+    idiv bx
+    mov ds:[tempPtr], dx
+endm
+
+land macro value1Ptr, value2Ptr, tempPtr
+    mov ax, ds:[value1Ptr]
+    cwd ;expandir AX
+    and ax, ds:[value2Ptr]
+    mov ds:[tempPtr], ax
+endm
+
 print macro ptr
     mov dx, ptr
     mov ah, 09h
