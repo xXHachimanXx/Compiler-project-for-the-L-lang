@@ -96,8 +96,23 @@
       <breakpoints>
         <line-breakpoint type="java-line">
           <url>file://$PROJECT_DIR$/Main.java</url>
-          <line>883</line>
+          <line>914</line>
           <option name="timeStamp" value="232" />
+        </line-breakpoint>
+        <line-breakpoint type="java-line">
+          <url>file://$PROJECT_DIR$/Main.java</url>
+          <line>1004</line>
+          <option name="timeStamp" value="233" />
+        </line-breakpoint>
+        <line-breakpoint type="java-line">
+          <url>file://$PROJECT_DIR$/Main.java</url>
+          <line>992</line>
+          <option name="timeStamp" value="235" />
+        </line-breakpoint>
+        <line-breakpoint type="java-line">
+          <url>file://$PROJECT_DIR$/Main.java</url>
+          <line>748</line>
+          <option name="timeStamp" value="236" />
         </line-breakpoint>
       </breakpoints>
     </breakpoint-manager>
