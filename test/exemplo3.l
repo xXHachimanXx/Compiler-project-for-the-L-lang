@@ -1,9 +1,6 @@
 /* Exemplo de Programa na linguagem L */
 
-char nome[34];
-int nome1[34];
-int n1 := 1;
-int n[3], max:=0, i;
+int b := -2;
 
 main
 {

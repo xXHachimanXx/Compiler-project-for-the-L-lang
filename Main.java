@@ -747,6 +747,9 @@ class Parser {
 
     ExpressionNode parseConstExpression() throws IOException {
         ExpressionNode node = null;
+        if(currentToken.type == TokenType.MINUS || currentToken.type == TokenType.PLUS){
+            eat();
+        }
         switch (currentToken.type) {
             case BOOLEAN_CONST:
                 boolean bvalue = currentToken.value.equals("TRUE");
