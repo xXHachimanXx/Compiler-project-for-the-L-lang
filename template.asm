@@ -40,6 +40,12 @@ negate macro valuePtr, tempPtr
     mov ds:[tempPtr], al
 endm
 
+minus macro valuePtr, tempPtr
+    mov ax, ds:[valuePtr]
+    neg ax
+    mov ds:[tempPtr], ax
+endm
+
 sum macro value1Ptr, value2Ptr, tempPtr
     mov ax, ds:[value1Ptr]
     mov bx, ds:[value2Ptr]

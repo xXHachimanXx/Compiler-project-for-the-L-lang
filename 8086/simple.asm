@@ -40,6 +40,12 @@ negate macro valuePtr, tempPtr
     mov ds:[tempPtr], al
 endm
 
+minus macro valuePtr, tempPtr
+    mov ax, ds:[valuePtr]
+    neg ax
+    mov ds:[tempPtr], ax
+endm
+
 sum macro value1Ptr, value2Ptr, tempPtr
     mov ax, ds:[value1Ptr]
     mov bx, ds:[value2Ptr]
@@ -166,12 +172,14 @@ endm
 data segment
     db 4000h DUP(64)
     db 13, 10, '$'
-    valor dw 16
-    db "hello my friend", '$'
+    valor1 dw -5
+    valor2 dw 10
+    valor3 dw 7
+    c db '2'
+    db "-00000", '$'
+    db "-00000", '$'
     db "-00000", '$'
     db "0", '$'
-    db "0", '$'
-    db "-00000", '$'
 data ends
 
 ; --------------- CODE
@@ -182,23 +190,29 @@ start:
     MOV AX, data
     MOV DS, AX
 
-    createIntTemp 16, 0
-    print 16389
-    intToStr 16387 16405
-    print 16405
-    createCharTemp '*' 2
-    charToStr 2 16412
-    print 16412
-    createBoolTemp 0 3
-    boolToStr 3 16414
-    print 16414
+    createIntTemp 5, 0
+    createIntTemp 10, 2
+    createIntTemp 7, 4
+    createCharTemp '2' 6
+    createIntTemp 2, 7
+    multiply 16387 7 9
+    intToStr 9 16394
+    print 16394
     print 16384
-    createIntTemp 4, 4
-    divide 16387 4 6
-    createIntTemp 1, 8
-    sum 6 8 10
-    intToStr 10 16416
-    print 16416
+    createIntTemp 2, 11
+    multiply 16389 11 13
+    intToStr 13 16401
+    print 16401
+    print 16384
+    createIntTemp 2, 15
+    minus 15 17
+    multiply 16391 17 19
+    intToStr 19 16408
+    print 16408
+    print 16384
+    charToStr 16393 16415
+    print 16415
+    print 16384
 
     MOV AH, 4CH ; Exit
     INT 21H
