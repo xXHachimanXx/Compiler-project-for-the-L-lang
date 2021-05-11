@@ -865,8 +865,14 @@ class Parser {
             eat();
 
             node = new BinaryExpressionNode(node, operator, parseUnaryExpression());
+            BinaryExpressionNode binaryNode = (BinaryExpressionNode) node;
 
             this.semantic.verifyTypeCompability((BinaryExpressionNode)node); //Semantic ACtion
+
+            node.end = this.codegen.doMultiplicativeExpression(
+                operator, binaryNode.leftExpression.end, binaryNode.rightExpression.end
+            );
+            
         }
         return node;
     }
@@ -1684,6 +1690,33 @@ class CodeGenerator {
                 temp += 1;
                 break;
         }
+        return addr;
+    }
+
+    public int doMultiplicativeExpression(String operator, int op1Addr, int op2Addr) {
+        int addr = temp; // '*' | '/' | '%' | 'and'
+
+        switch (operator) {
+            case "*":
+                addCode(String.format("multiply %d %d %d", op1Addr, op2Addr, addr));
+                temp += 2;
+                break;
+
+            case "/":
+                addCode(String.format("divide %d %d %d", op1Addr, op2Addr, addr));
+                temp += 2;
+                break;
+
+            case "%":
+                addCode(String.format("mod %d %d %d", op1Addr, op2Addr, addr));
+                temp += 2;
+                break;
+
+            case "and":
+                temp += 1;
+                break;
+        }
+
         return addr;
     }
 

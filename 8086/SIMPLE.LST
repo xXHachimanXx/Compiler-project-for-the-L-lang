@@ -1,0 +1,436 @@
+Microsoft (R) Macro Assembler Version 5.00                  5/10/21 21:22:03
+                                                             Page     1-1
+
+
+				.model small 
+ 4000				.stack 4000h 
+				 
+				; --------------- MACROS 
+				 
+				createBoolTemp macro value, tempPtr 
+				    mov ax, value 
+				    mov ds:[tempPtr], al 
+				endm 
+				 
+				createCharTemp macro value, tempPtr 
+				    mov ax, value 
+				    mov ds:[tempPtr], al 
+				endm 
+				 
+				createIntTemp macro value, tempPtr 
+				    mov ax, value 
+				    mov ds:[tempPtr], ax 
+				endm 
+				 
+				getNonIntArrayElement macro arrPtr, subscriptEx
+				prPtr, tempPtr 
+				    mov ax, ds:[subscriptExprPtr] ; ax = índic
+				e 
+				    add ax, arrPtr ; ax += endereço do arranjo
+				 
+				    mov al, ds:[ax] ; Pega o elemento do arranj
+				o 
+				    mov ds:[tempPtr], al ; Coloca na memória t
+				emporária 
+				endm 
+				 
+				getIntArrayElement macro arrPtr, subscriptExprP
+				tr, tempPtr 
+				    mov ax, ds:[subscriptExprPtr] ; ax = índic
+				e 
+				    add ax, ax ; ax = índice * 2 
+				    add ax, arrPtr ; ax += endereço do arranjo
+				 
+				    mov ax, ds:[ax] ; Pega o elemento do arranj
+				o 
+				    mov ds:[tempPtr], ax ; Coloca na memória t
+				emporária 
+				endm 
+				 
+				negate macro valuePtr, tempPtr 
+				    mov ax, ds:[valuePtr] 
+				    neg ax 
+				    add ax, 1 
+				    mov ds:[tempPtr], al 
+				endm 
+				 
+				sum macro value1Ptr, value2Ptr, tempPtr 
+				    mov ax, ds:[value1Ptr] 
+Microsoft (R) Macro Assembler Version 5.00                  5/10/21 21:22:03
+                                                             Page     1-2
+
+
+				    mov bx, ds:[value2Ptr] 
+				    add ax, bx 
+				    mov ds:[tempPtr], ax 
+				endm 
+				 
+				subtract macro value1Ptr, value2Ptr, tempPtr 
+				    mov ax, ds:[value1Ptr] 
+				    mov bx, ds:[value2Ptr] 
+				    sub ax, bx 
+				    mov ds:[tempPtr], ax 
+				endm 
+				 
+				multiply macro value1Ptr, value2Ptr, tempPtr 
+				    mov ax, ds:[value1Ptr] 
+				    cwd ;expandir AX writeln(valor + ((valor / 
+				2 / 2 / (4))) - 3); 
+				    mov bx, ds:[value2Ptr] 
+				    imul bx 
+				    mov ds:[tempPtr], ax 
+				endm 
+				 
+				divide macro value1Ptr, value2Ptr, tempPtr 
+				    mov ax, ds:[value1Ptr] 
+				    cwd ;expandir AX 
+				    mov bl, ds:[value2Ptr] 
+				    idiv bx 
+				    mov ds:[tempPtr], ax 
+				endm 
+				 
+				module macro value1Ptr, value2Ptr, tempPtr 
+				    mov ax, ds:[value1Ptr] 
+				    cwd ;expandir AX 
+				    mov bx, ds:[value2Ptr] 
+				    idiv bx 
+				    mov ds:[tempPtr], dx 
+				endm 
+				 
+				land macro value1Ptr, value2Ptr, tempPtr 
+				    mov ax, ds:[value1Ptr] 
+				    cwd ;expandir AX 
+				    and ax, ds:[value2Ptr] 
+				    mov ds:[tempPtr], ax 
+				endm 
+				 
+				print macro ptr 
+				    mov dx, ptr 
+				    mov ah, 09h 
+				    int 21h 
+				endm 
+				 
+				appendDollarToStr macro 
+				    mov dx, '$' ;coloca '$' 
+				    mov ds:[di],dl ;escreve caractere 
+				    add di, 1 ;incrementa base 
+Microsoft (R) Macro Assembler Version 5.00                  5/10/21 21:22:03
+                                                             Page     1-3
+
+
+				endm 
+				 
+				; strEndPtr - ponteiro para o final da string (
+				onde ficaria o '$') 
+				appendIntToStr macro strEndPtr 
+				    LOCAL R0, R1, R2 
+				 
+				    mov di, strEndPtr 
+				    mov cx, 0 ;contador 
+				    cmp ax,0 ;verifica sinal 
+				    jge R0 ;salta se número positivo 
+				 
+				    mov bl, 2Dh ;senão, escreve sinal - 
+				    mov ds:[di], bl 
+				    add di, 1 ;incrementa índice 
+				    neg ax ;toma módulo do número 
+				 
+				    R0: 
+				        mov bx, 10 ;divisor 
+				    R1: 
+				        add cx, 1 ;incrementa contador 
+				        mov dx, 0 ;estende 32bits p/ div. 
+				        idiv bx ;divide DXAX por BX 
+				        push dx ;empilha valor do resto 
+				        cmp ax, 0 ;verifica se quoc. é 0 
+				        jne R1 ;se não é 0, continua 
+				 
+				    ;agora, desemp. os valores e escreve o stri
+				ng 
+				    R2: 
+				        pop dx ;desempilha valor 
+				        add dx, 30h ;transforma em caractere 
+				        mov ds:[di],dl ;escreve caractere 
+				        add di, 1 ;incrementa base 
+				        add cx, -1 ;decrementa contador 
+				        cmp cx, 0 ;verifica pilha vazia 
+				        jne R2 ;se não pilha vazia, loop 
+				        appendDollarToStr 
+				endm 
+				 
+				boolToStr macro ptr, strPtr 
+				    LOCAL R0, R1 
+				 
+				    mov al, ds:[ptr] ; Traz o booleano da memó
+				ria 
+				    mov ah, 0 ; Limpa possível lixo em AH 
+				    cmp ax, 0 ; Compara o valor booleano com 0 
+				    je R0 
+				 
+				    mov al, '1' ; Se nao for igual a 0 
+				    jmp R1 
+				 
+				    R0: ; Se for igual a 0 
+				        mov al, '0' 
+Microsoft (R) Macro Assembler Version 5.00                  5/10/21 21:22:03
+                                                             Page     1-4
+
+
+				 
+				    R1: ; Se for igual a 1 
+				        mov ds:[strPtr], al ; Coloca na string 
+				endm 
+				 
+				intToStr macro ptr, strPtr 
+				    mov ax, ds:[ptr] ; Traz o inteiro para ax 
+				    appendIntToStr strPtr 
+				endm 
+				 
+				charToStr macro ptr, strPtr 
+				    mov al, ds:[ptr] ; Traz o caractere para al
+				 
+				    mov ds:[strPtr], al ; Coloca na string 
+				endm 
+				 
+				; --------------- DATA SEGMENT 
+				 
+ 0000				data segment 
+ 0000  4000[			    db 4000h DUP(64) 
+	   40			
+			 ]	
+				
+ 4000  0D 0A 24			    db 13, 10, '$' 
+ 4003  0010			    valor dw 16 
+ 4005  68 65 6C 6C 6F 20 6D	    db "hello my friend", '$' 
+       79 20 66 72 69 65 6E	
+       64 24			
+ 4015  2D 30 30 30 30 30 24	    db "-00000", '$' 
+ 401C  30 24			    db "0", '$' 
+ 401E  30 24			    db "0", '$' 
+ 4020  2D 30 30 30 30 30 24	    db "-00000", '$' 
+ 4027				data ends 
+				 
+				; --------------- CODE 
+				 
+ 0000				code segment 
+				assume cs:code, ds:data 
+ 0000				start: 
+ 0000  B8 ---- R		    MOV AX, data 
+ 0003  8E D8			    MOV DS, AX 
+				 
+				    createIntTemp 16, 0 
+ 0005  B8 0010               1	    mov ax, 16 
+ 0008  A3 0000               1	    mov ds:[0], ax 
+				    print 16389 
+ 000B  BA 4005               1	    mov dx, 16389 
+ 000E  B4 09                 1	    mov ah, 09h 
+ 0010  CD 21                 1	    int 21h 
+				    intToStr 16387 16405 
+ 0012  A1 4003               1	    mov ax, ds:[16387] ; Traz o inteiro para ax
+				 
+ 0015  BF 4015               2	    mov di, 16405 
+ 0018  B9 0000               2	    mov cx, 0 ;contador 
+Microsoft (R) Macro Assembler Version 5.00                  5/10/21 21:22:03
+                                                             Page     1-5
+
+
+ 001B  3D 0000               2	    cmp ax,0 ;verifica sinal 
+ 001E  7D 09                 2	    jge ??0000 ;salta se número positivo 
+ 0020  B3 2D                 2	    mov bl, 2Dh ;senão, escreve sinal - 
+ 0022  88 1D                 2	    mov ds:[di], bl 
+ 0024  83 C7 01              2	    add di, 1 ;incrementa índice 
+ 0027  F7 D8                 2	    neg ax ;toma módulo do número 
+ 0029                        2	    ??0000: 
+ 0029  BB 000A               2	        mov bx, 10 ;divisor 
+ 002C                        2	    ??0001: 
+ 002C  83 C1 01              2	        add cx, 1 ;incrementa contador 
+ 002F  BA 0000               2	        mov dx, 0 ;estende 32bits p/ div. 
+ 0032  F7 FB                 2	        idiv bx ;divide DXAX por BX 
+ 0034  52                    2	        push dx ;empilha valor do resto 
+ 0035  3D 0000               2	        cmp ax, 0 ;verifica se quoc. é 0 
+ 0038  75 F2                 2	        jne ??0001 ;se não é 0, continua 
+ 003A                        2	    ??0002: 
+ 003A  5A                    2	        pop dx ;desempilha valor 
+ 003B  83 C2 30              2	        add dx, 30h ;transforma em caractere 
+ 003E  88 15                 2	        mov ds:[di],dl ;escreve caractere 
+ 0040  83 C7 01              2	        add di, 1 ;incrementa base 
+ 0043  83 C1 FF              2	        add cx, -1 ;decrementa contador 
+ 0046  83 F9 00              2	        cmp cx, 0 ;verifica pilha vazia 
+ 0049  75 EF                 2	        jne ??0002 ;se não pilha vazia, loop 
+ 004B  BA 0024               3	    mov dx, '$' ;coloca '$' 
+ 004E  88 15                 3	    mov ds:[di],dl ;escreve caractere 
+ 0050  83 C7 01              3	    add di, 1 ;incrementa base 
+				    print 16405 
+ 0053  BA 4015               1	    mov dx, 16405 
+ 0056  B4 09                 1	    mov ah, 09h 
+ 0058  CD 21                 1	    int 21h 
+				    createCharTemp '*' 2 
+ 005A  B8 002A               1	    mov ax, '*' 
+ 005D  A2 0002               1	    mov ds:[2], al 
+				    charToStr 2 16412 
+ 0060  A0 0002               1	    mov al, ds:[2] ; Traz o caractere para al 
+ 0063  A2 401C               1	    mov ds:[16412], al ; Coloca na string 
+				    print 16412 
+ 0066  BA 401C               1	    mov dx, 16412 
+ 0069  B4 09                 1	    mov ah, 09h 
+ 006B  CD 21                 1	    int 21h 
+				    createBoolTemp 0 3 
+ 006D  B8 0000               1	    mov ax, 0 
+ 0070  A2 0003               1	    mov ds:[3], al 
+				    boolToStr 3 16414 
+ 0073  A0 0003               1	    mov al, ds:[3] ; Traz o booleano da memóri
+				a 
+ 0076  B4 00                 1	    mov ah, 0 ; Limpa possível lixo em AH 
+ 0078  3D 0000               1	    cmp ax, 0 ; Compara o valor booleano com 0 
+ 007B  74 05                 1	    je ??0003 
+ 007D  B0 31                 1	    mov al, '1' ; Se nao for igual a 0 
+ 007F  EB 03 90              1	    jmp ??0004 
+ 0082                        1	    ??0003: ; Se for igual a 0 
+ 0082  B0 30                 1	        mov al, '0' 
+ 0084                        1	    ??0004: ; Se for igual a 1 
+Microsoft (R) Macro Assembler Version 5.00                  5/10/21 21:22:03
+                                                             Page     1-6
+
+
+ 0084  A2 401E               1	        mov ds:[16414], al ; Coloca na string 
+				    print 16414 
+ 0087  BA 401E               1	    mov dx, 16414 
+ 008A  B4 09                 1	    mov ah, 09h 
+ 008C  CD 21                 1	    int 21h 
+				    print 16384 
+ 008E  BA 4000               1	    mov dx, 16384 
+ 0091  B4 09                 1	    mov ah, 09h 
+ 0093  CD 21                 1	    int 21h 
+				    createIntTemp 4, 4 
+ 0095  B8 0004               1	    mov ax, 4 
+ 0098  A3 0004               1	    mov ds:[4], ax 
+				    divide 16387 4 6 
+ 009B  A1 4003               1	    mov ax, ds:[16387] 
+ 009E  99                    1	    cwd ;expandir AX 
+ 009F  8A 1E 0004            1	    mov bl, ds:[4] 
+ 00A3  F7 FB                 1	    idiv bx 
+ 00A5  A3 0006               1	    mov ds:[6], ax 
+				    createIntTemp 1, 8 
+ 00A8  B8 0001               1	    mov ax, 1 
+ 00AB  A3 0008               1	    mov ds:[8], ax 
+				    sum 6 8 10 
+ 00AE  A1 0006               1	    mov ax, ds:[6] 
+ 00B1  8B 1E 0008            1	    mov bx, ds:[8] 
+ 00B5  03 C3                 1	    add ax, bx 
+ 00B7  A3 000A               1	    mov ds:[10], ax 
+				    intToStr 10 16416 
+ 00BA  A1 000A               1	    mov ax, ds:[10] ; Traz o inteiro para ax 
+ 00BD  BF 4020               2	    mov di, 16416 
+ 00C0  B9 0000               2	    mov cx, 0 ;contador 
+ 00C3  3D 0000               2	    cmp ax,0 ;verifica sinal 
+ 00C6  7D 09                 2	    jge ??0005 ;salta se número positivo 
+ 00C8  B3 2D                 2	    mov bl, 2Dh ;senão, escreve sinal - 
+ 00CA  88 1D                 2	    mov ds:[di], bl 
+ 00CC  83 C7 01              2	    add di, 1 ;incrementa índice 
+ 00CF  F7 D8                 2	    neg ax ;toma módulo do número 
+ 00D1                        2	    ??0005: 
+ 00D1  BB 000A               2	        mov bx, 10 ;divisor 
+ 00D4                        2	    ??0006: 
+ 00D4  83 C1 01              2	        add cx, 1 ;incrementa contador 
+ 00D7  BA 0000               2	        mov dx, 0 ;estende 32bits p/ div. 
+ 00DA  F7 FB                 2	        idiv bx ;divide DXAX por BX 
+ 00DC  52                    2	        push dx ;empilha valor do resto 
+ 00DD  3D 0000               2	        cmp ax, 0 ;verifica se quoc. é 0 
+ 00E0  75 F2                 2	        jne ??0006 ;se não é 0, continua 
+ 00E2                        2	    ??0007: 
+ 00E2  5A                    2	        pop dx ;desempilha valor 
+ 00E3  83 C2 30              2	        add dx, 30h ;transforma em caractere 
+ 00E6  88 15                 2	        mov ds:[di],dl ;escreve caractere 
+ 00E8  83 C7 01              2	        add di, 1 ;incrementa base 
+ 00EB  83 C1 FF              2	        add cx, -1 ;decrementa contador 
+ 00EE  83 F9 00              2	        cmp cx, 0 ;verifica pilha vazia 
+ 00F1  75 EF                 2	        jne ??0007 ;se não pilha vazia, loop 
+ 00F3  BA 0024               3	    mov dx, '$' ;coloca '$' 
+Microsoft (R) Macro Assembler Version 5.00                  5/10/21 21:22:03
+                                                             Page     1-7
+
+
+ 00F6  88 15                 3	    mov ds:[di],dl ;escreve caractere 
+ 00F8  83 C7 01              3	    add di, 1 ;incrementa base 
+				    print 16416 
+ 00FB  BA 4020               1	    mov dx, 16416 
+ 00FE  B4 09                 1	    mov ah, 09h 
+ 0100  CD 21                 1	    int 21h 
+				 
+ 0102  B4 4C			    MOV AH, 4CH ; Exit 
+ 0104  CD 21			    INT 21H 
+ 0106				code ends 
+				end start 
+
+Microsoft (R) Macro Assembler Version 5.00                  5/10/21 21:22:03
+                                                             Symbols-1
+
+
+Macros:
+
+		N a m e			Lines
+
+APPENDDOLLARTOSTR  . . . . . . .  	   3
+APPENDINTTOSTR . . . . . . . . .  	  27
+BOOLTOSTR  . . . . . . . . . . .  	  10
+CHARTOSTR  . . . . . . . . . . .  	   2
+CREATEBOOLTEMP . . . . . . . . .  	   2
+CREATECHARTEMP . . . . . . . . .  	   2
+CREATEINTTEMP  . . . . . . . . .  	   2
+DIVIDE . . . . . . . . . . . . .  	   5
+GETINTARRAYELEMENT . . . . . . .  	   5
+GETNONINTARRAYELEMENT  . . . . .  	   4
+INTTOSTR . . . . . . . . . . . .  	   2
+LAND . . . . . . . . . . . . . .  	   4
+MODULE . . . . . . . . . . . . .  	   5
+MULTIPLY . . . . . . . . . . . .  	   5
+NEGATE . . . . . . . . . . . . .  	   4
+PRINT  . . . . . . . . . . . . .  	   3
+SUBTRACT . . . . . . . . . . . .  	   4
+SUM  . . . . . . . . . . . . . .  	   4
+
+Segments and Groups:
+
+                N a m e         	Length	 Align	Combine Class
+
+CODE . . . . . . . . . . . . . .  	0106	PARA	NONE	
+DATA . . . . . . . . . . . . . .  	4027	PARA	NONE	
+DGROUP . . . . . . . . . . . . .  	GROUP
+  _DATA  . . . . . . . . . . . .  	0000	WORD	PUBLIC	'DATA'
+  STACK  . . . . . . . . . . . .  	4000	PARA	STACK	'STACK'
+_TEXT  . . . . . . . . . . . . .  	0000	WORD	PUBLIC	'CODE'
+
+Symbols:            
+
+                N a m e         	Type	 Value	 Attr
+
+START  . . . . . . . . . . . . .  	L NEAR	0000	CODE
+
+VALOR  . . . . . . . . . . . . .  	L WORD	4003	DATA
+
+??0000 . . . . . . . . . . . . .  	L NEAR	0029	CODE
+??0001 . . . . . . . . . . . . .  	L NEAR	002C	CODE
+??0002 . . . . . . . . . . . . .  	L NEAR	003A	CODE
+??0003 . . . . . . . . . . . . .  	L NEAR	0082	CODE
+??0004 . . . . . . . . . . . . .  	L NEAR	0084	CODE
+??0005 . . . . . . . . . . . . .  	L NEAR	00D1	CODE
+??0006 . . . . . . . . . . . . .  	L NEAR	00D4	CODE
+??0007 . . . . . . . . . . . . .  	L NEAR	00E2	CODE
+@CODE  . . . . . . . . . . . . .  	TEXT  _TEXT		
+@CODESIZE  . . . . . . . . . . .  	TEXT  0		
+@DATASIZE  . . . . . . . . . . .  	TEXT  0		
+@FILENAME  . . . . . . . . . . .  	TEXT  simple		
+Microsoft (R) Macro Assembler Version 5.00                  5/10/21 21:22:03
+                                                             Symbols-2
+
+
+
+
+    206 Source  Lines
+    319 Total   Lines
+     42 Symbols
+
+  50996 + 449164 Bytes symbol space free
+
+      0 Warning Errors
+      0 Severe  Errors
