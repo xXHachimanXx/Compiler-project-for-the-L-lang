@@ -1,5 +1,6 @@
 /out/
 .vscode
+.idea/
 dosbox*
 *.exe
 *.obj
