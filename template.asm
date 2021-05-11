@@ -40,7 +40,7 @@ negate macro valuePtr, tempPtr
     mov ds:[tempPtr], al
 endm
 
-minus macro valuePtr, tempPtr
+unaryMinus macro valuePtr, tempPtr
     mov ax, ds:[valuePtr]
     neg ax
     mov ds:[tempPtr], ax

@@ -40,7 +40,7 @@ negate macro valuePtr, tempPtr
     mov ds:[tempPtr], al
 endm
 
-minus macro valuePtr, tempPtr
+unaryMinus macro valuePtr, tempPtr
     mov ax, ds:[valuePtr]
     neg ax
     mov ds:[tempPtr], ax
@@ -205,7 +205,7 @@ start:
     print 16401
     print 16384
     createIntTemp 2, 15
-    minus 15 17
+    unaryMinus 15 17
     multiply 16391 17 19
     intToStr 19 16408
     print 16408
