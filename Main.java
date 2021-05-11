@@ -8,9 +8,6 @@ import java.util.List;
 import java.util.Map.Entry;
 import java.io.InputStreamReader;
 
-//TODO Verificar o tipo das atribuições [Semantic]
-//TODO Adicionar os operadores relacionais na verificação de operadores [Semantic]
-
 enum TokenType {
     EOF,
     MAIN,
@@ -32,7 +29,8 @@ enum TokenType {
     FINAL,
     // Literals
     INTEGER,
-    HEX_INTEGER,
+    CHAR_CONST,
+    HEX_CHAR,
     STRING,
     BOOLEAN_CONST,
     // Operators
@@ -62,14 +60,6 @@ enum TokenType {
 enum SymbolClass{
     CONST,
     VAR
-}
-
-enum Type{
-    INT,
-    CHAR,
-    STR,
-    BOOL,
-    VET
 }
 
 class Token {
@@ -174,7 +164,7 @@ class Lexer {
                     }
                     if (c == 'h') {
                         str += c;
-                        return new Token(TokenType.HEX_INTEGER, str);
+                        return new Token(TokenType.HEX_CHAR, str);
                     } else if (c >= '0' && c <= '9') {
                         str += c;
                         c = read();
@@ -199,7 +189,7 @@ class Lexer {
                         System.exit(0);
                     }
                     str += c;
-                    return new Token(TokenType.HEX_INTEGER, str);
+                    return new Token(TokenType.HEX_CHAR, str);
                 }
             }
             else if (c >= 'A' && c <= 'F') {
@@ -225,7 +215,7 @@ class Lexer {
                     System.exit(0);
                 }
                 str += c;
-                return new Token(TokenType.HEX_INTEGER, str);
+                return new Token(TokenType.HEX_CHAR, str);
             }
         }
 
@@ -324,7 +314,7 @@ class Lexer {
             System.out.printf("%d\nlexema nao identificado ['%c].\n", line, c);
             System.exit(0);
         }
-        return new Token(TokenType.CHAR, c);
+        return new Token(TokenType.CHAR_CONST, c);
     }
 
     void skipSingleLineComment() throws IOException {
@@ -669,17 +659,15 @@ class ProgramNode extends Node {
 class ParserUtils {
     public static int getTypeSize(TokenType type, int size){
         int size2 = 0;
-        // INTEGER,
-        //    HEX_INTEGER,
-        //    STRING,
-        //    BOOLEAN_CONST,
+
         switch(type){
             case INT: size2 = 2; break;
             case INTEGER: size2 = 2; break;
-            case HEX_INTEGER: size2 = 2; break;
             case BOOLEAN: size2 = 1; break;
             case BOOLEAN_CONST: size2 = 1; break;
             case CHAR: size2 = 1; break;
+            case CHAR_CONST: size2 = 1; break;
+            case HEX_CHAR: size2 = 1; break;
             case STRING: size2 = 1; break;
             default:
                 // System.out.printf("ERROR: Type not supported: %s, size = %d\n", type.toString(), size);
@@ -752,9 +740,6 @@ class Parser {
 
     ExpressionNode parseConstExpression() throws IOException {
         ExpressionNode node = null;
-        if(currentToken.type == TokenType.MINUS || currentToken.type == TokenType.PLUS){
-            eat();
-        }
         switch (currentToken.type) {
             case BOOLEAN_CONST:
                 boolean bvalue = currentToken.value.equals("TRUE");
@@ -763,10 +748,18 @@ class Parser {
                 eat();
                 break;
 
-            case CHAR:
+            case CHAR_CONST:
                 char cvalue = currentToken.value.charAt(0);
                 node = new CharExpressionNode(cvalue);
                 node.end = this.codegen.createCharTemp(cvalue);
+                eat();
+                break;
+
+            case HEX_CHAR:
+                String hexStr = currentToken.value.substring(1, 3);
+                char hcvalue = (char) Integer.parseInt(hexStr, 16);
+                node = new CharExpressionNode(hcvalue);
+                node.end = this.codegen.createCharTemp(hcvalue);
                 eat();
                 break;
 
@@ -777,14 +770,6 @@ class Parser {
                 eat();
                 break;
 
-            case HEX_INTEGER:
-                String hexStr = currentToken.value.substring(1, 3);
-                int hivalue = Integer.parseInt(hexStr, 16);
-                node = new IntExpressionNode(hivalue);
-                node.end = this.codegen.createIntTemp(hivalue);
-                eat();
-                break;
-
             case STRING:
                 node = new StringExpressionNode(currentToken.value);
                 node.end = this.codegen.createStrTemp(currentToken.value);
@@ -792,6 +777,33 @@ class Parser {
                 break;
         }
         return node;
+    }
+
+    ExpressionNode parseSignedConstExpression() throws IOException {
+        ExpressionNode node = null;
+        String operator = currentToken.value;
+        switch (currentToken.type) {
+            case PLUS:
+                eat();
+                node = parseConstExpression();
+                //Semantic Action
+                this.semantic.verifyUnaryOperator(
+                    operator,
+                    this.semantic.getExpressionType(node)
+                );
+                break;
+            case MINUS:
+                eat();
+                node = parseConstExpression();
+                //Semantic Action
+                this.semantic.verifyUnaryOperator(
+                    operator,
+                    this.semantic.getExpressionType(node)
+                );
+                ((IntExpressionNode) node).value *= -1;
+                break;
+        }
+        return node == null ? parseConstExpression() : node;
     }
 
     ExpressionNode parsePrimaryExpression() throws IOException {
@@ -838,16 +850,36 @@ class Parser {
         switch (currentToken.type) {
             case NOT:
                 eat();
-                ExpressionNode expr = parseUnaryExpression();
-                node = new UnaryExpressionNode(operator, expr);
-                node.end = this.codegen.negate(expr.end);
+                ExpressionNode notOperand = parseUnaryExpression();
+                node = new UnaryExpressionNode(operator, notOperand);
+                node.end = this.codegen.negate(notOperand.end);
                 //Semantic Action
-                this.semantic.verifyOperatorCompatibility(
-                        ((UnaryExpressionNode)node).operator,
-                        TokenType.NOT,
-                        this.semantic.getExpressionType(((UnaryExpressionNode)node).expression)
+                this.semantic.verifyUnaryOperator(
+                    operator,
+                    this.semantic.getExpressionType(notOperand)
                 );
-
+                break;
+            case PLUS:
+                eat();
+                ExpressionNode plusOperand = parseUnaryExpression();
+                node = new UnaryExpressionNode(operator, plusOperand);
+                node.end = plusOperand.end;
+                //Semantic Action
+                this.semantic.verifyUnaryOperator(
+                    operator,
+                    this.semantic.getExpressionType(plusOperand)
+                );
+                break;
+            case MINUS:
+                eat();
+                ExpressionNode minusOperand = parseUnaryExpression();
+                node = new UnaryExpressionNode(operator, minusOperand);
+                node.end = this.codegen.unaryMinus(minusOperand.end);
+                //Semantic Action
+                this.semantic.verifyUnaryOperator(
+                    operator,
+                    this.semantic.getExpressionType(minusOperand)
+                );
                 break;
         }
         return node == null ? parsePrimaryExpression() : node;
@@ -878,16 +910,7 @@ class Parser {
     }
 
     ExpressionNode parseAdditiveExpression() throws IOException {
-        ExpressionNode node = null;
-        if (currentToken.type == TokenType.PLUS || currentToken.type == TokenType.MINUS) {
-            String operator = currentToken.value;
-            eat();
-            node = new UnaryExpressionNode(
-                    operator, parseMultiplicativeExpression()
-            );
-        } else {
-            node = parseMultiplicativeExpression();
-        }
+        ExpressionNode node = parseMultiplicativeExpression();
         while (
                 currentToken.type == TokenType.PLUS
                         || currentToken.type == TokenType.MINUS
@@ -967,7 +990,7 @@ class Parser {
             eat();
             TokenType currentTokenType = currentToken.type;
 
-            value = parseConstExpression();
+            value = parseSignedConstExpression();
             if (value == null) tokenNotExpected();
 
             //Semantic Action
@@ -999,13 +1022,13 @@ class Parser {
         eat(TokenType.IDENTIFIER);
         eat(TokenType.EQUAL);
 
-        TokenType tokenType = currentToken.type;
-
-        value = parseConstExpression();
+        value = parseSignedConstExpression();
 
         if (value == null) tokenNotExpected();
 
-        Symbol s = new Symbol(identifier, SymbolClass.CONST, tokenType, value, 0);
+        Symbol s = new Symbol(
+            identifier, SymbolClass.CONST, this.semantic.getExpressionType(value), value, 0
+        );
         this.semantic.addSymbol(s); //Semantic Action
         this.codegen.declSymbol(s);
 
@@ -1426,7 +1449,7 @@ class Semantic{
 
     public void verifyTypeCompatibility(TokenType tokenTypeLeft, TokenType tokenTypeRight){
         if(tokenTypeLeft == TokenType.INT && (tokenTypeRight != TokenType.INTEGER
-                && tokenTypeRight != TokenType.HEX_INTEGER && tokenTypeRight != TokenType.INT))
+                && tokenTypeRight != TokenType.INT))
         {
             SemanticErros.incompatibleType(tokenTypeLeft, tokenTypeRight, lexer.line);
         }else if(tokenTypeLeft == TokenType.CHAR && tokenTypeRight != TokenType.CHAR)
@@ -1464,12 +1487,12 @@ class Semantic{
         }
     }
 
-    private void verifyUnaryOperator(String operator, TokenType tokenTypeRight){
+    public void verifyUnaryOperator(String operator, TokenType tokenTypeRight){
         if(operator.equals("not") && tokenTypeRight != TokenType.BOOLEAN)
         {
             SemanticErros.incompatibleType(TokenType.NOT, tokenTypeRight, lexer.line);
         }
-        if(ParserUtils.isArithmetic(operator) && (tokenTypeRight != TokenType.INT))
+        if((operator.equals("+") || operator.equals("-")) && (tokenTypeRight != TokenType.INT))
         {
             SemanticErros.incompatibleType(TokenType.INT, tokenTypeRight, lexer.line);
         }
@@ -1477,9 +1500,10 @@ class Semantic{
 
     private TokenType getNodeType(TokenType tokenTypeLeft, TokenType tokenTypeRight){
         if(tokenTypeLeft == TokenType.INT && (tokenTypeRight == TokenType.INTEGER
-                || tokenTypeRight == TokenType.HEX_INTEGER || tokenTypeRight == TokenType.INT)){
+                || tokenTypeRight == TokenType.INT)){
             return TokenType.INT;
-        }else if(tokenTypeLeft == TokenType.CHAR && (tokenTypeRight == TokenType.CHAR || tokenTypeRight == TokenType.STRING)){
+        }else if(tokenTypeLeft == TokenType.CHAR && (tokenTypeRight == TokenType.CHAR
+                || tokenTypeRight == TokenType.HEX_CHAR || tokenTypeRight == TokenType.STRING)){
             return TokenType.CHAR;
         }else if(tokenTypeLeft == TokenType.BOOLEAN && (tokenTypeRight == TokenType.BOOLEAN
                 || tokenTypeRight == TokenType.BOOLEAN_CONST)){
@@ -1670,6 +1694,13 @@ class CodeGenerator {
         int addr = temp;
         addCode(String.format("negate %d %d", valuePtr, addr));
         temp++;
+        return addr;
+    }
+
+    public int unaryMinus(int valuePtr) {
+        int addr = temp;
+        addCode(String.format("unaryMinus %d %d", valuePtr, addr));
+        temp += 2;
         return addr;
     }
 
