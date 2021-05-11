@@ -1361,7 +1361,7 @@ class Semantic{
     }
 
     public void verifyVetSize(String symbolName, int size){
-        if(size > 8000){
+        if(size < 1 || size > 8000){
             SemanticErros.vetOverflow(symbolName, size, lexer.line);
         }
     }
