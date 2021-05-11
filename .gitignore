@@ -1,1 +1,8 @@
 /out/
+.vscode
+dosbox*
+*.exe
+*.obj
+*.lst
+8086/
+!8086/simple.asm
