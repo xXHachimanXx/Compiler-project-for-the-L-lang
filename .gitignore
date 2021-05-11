@@ -6,3 +6,6 @@ dosbox*
 *.lst
 8086/
 !8086/simple.asm
+!8086/debug.exe
+!8086/link.exe
+!8086/masm.exe
