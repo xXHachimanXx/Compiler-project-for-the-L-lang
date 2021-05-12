@@ -1367,7 +1367,7 @@ class Semantic{
 
     public void verifyVetSize(String symbolName, int size){
         if(size < 1 || size > 8000){
-            SemanticErros.vetOverflow(symbolName, size, lexer.line);
+            SemanticErros.vetOverflow(lexer.line);
         }
     }
 
@@ -1398,8 +1398,6 @@ class Semantic{
                 tokenType = TokenType.BOOLEAN;
             }
             else if(tokenTypeLeft != null && tokenTypeRight != null) {
-                // System.out.println(String.format("TYPES: '%s' com '%s'", tokenTypeLeft.toString(), tokenTypeRight.toString()));
-
                 tokenType = getNodeType(tokenTypeLeft,tokenTypeRight);
             }
 
@@ -1407,7 +1405,7 @@ class Semantic{
             tokenType = getExpressionType(((ArraySubscriptExpressionNode) node).subscriptExpr);
 
             if(tokenType != TokenType.INT)
-                SemanticErros.incompatibleType(tokenType, TokenType.INT, lexer.line);
+                SemanticErros.incompatibleTypes(lexer.line);
 
             tokenType = getDeclaredSymbol(((ArraySubscriptExpressionNode) node).identifier).type;
         }else if(node instanceof IdentifierExpressionNode){
@@ -1456,18 +1454,18 @@ class Semantic{
         if(tokenTypeLeft == TokenType.INT && (tokenTypeRight != TokenType.INTEGER
                 && tokenTypeRight != TokenType.INT))
         {
-            SemanticErros.incompatibleType(tokenTypeLeft, tokenTypeRight, lexer.line);
+            SemanticErros.incompatibleTypes(lexer.line);
         }else if(tokenTypeLeft == TokenType.CHAR && tokenTypeRight != TokenType.CHAR)
         {
-            SemanticErros.incompatibleType(tokenTypeLeft, tokenTypeRight, lexer.line);
+            SemanticErros.incompatibleTypes(lexer.line);
         }else if(tokenTypeLeft == TokenType.STRING
                 && (tokenTypeRight != TokenType.CHAR && tokenTypeRight != TokenType.STRING))
         {
-            SemanticErros.incompatibleType(tokenTypeLeft, tokenTypeRight, lexer.line);
+            SemanticErros.incompatibleTypes(lexer.line);
         }else if(tokenTypeLeft == TokenType.BOOLEAN && (tokenTypeRight != TokenType.BOOLEAN
                 && tokenTypeRight != TokenType.BOOLEAN_CONST))
         {
-            SemanticErros.incompatibleType(tokenTypeLeft, tokenTypeRight, lexer.line);
+            SemanticErros.incompatibleTypes(lexer.line);
         }
     }
 
@@ -1475,19 +1473,20 @@ class Semantic{
         if(operator != null){
             if(ParserUtils.isArithmetic(operator) && tokenTypeRight != TokenType.INT)
             {
-                SemanticErros.incompatibleOperator(operator, tokenTypeLeft, tokenTypeRight, lexer.line);
+                SemanticErros.incompatibleTypes(lexer.line);
             }
             if(tokenTypeLeft == TokenType.STRING && operator.equals("=") && (tokenTypeRight != TokenType.STRING))
             {
-                SemanticErros.incompatibleOperator(operator, tokenTypeLeft, tokenTypeRight, lexer.line);
+                SemanticErros.incompatibleTypes(lexer.line);
             }
             if(ParserUtils.isLogical(operator) && tokenTypeRight != TokenType.BOOLEAN)
             {
-                SemanticErros.incompatibleOperator(operator, tokenTypeLeft, tokenTypeRight, lexer.line);
+                SemanticErros.incompatibleTypes(lexer.line);
             }
-            if(ParserUtils.isRelational(operator) && (tokenTypeLeft != tokenTypeRight))
+            if(ParserUtils.isRelational(operator) && (tokenTypeLeft != tokenTypeRight
+                    || (tokenTypeLeft == TokenType.BOOLEAN || tokenTypeRight == TokenType.BOOLEAN)) )
             {
-                SemanticErros.incompatibleType(tokenTypeLeft, tokenTypeRight, lexer.line);
+                SemanticErros.incompatibleTypes(lexer.line);
             }
         }
     }
@@ -1495,11 +1494,11 @@ class Semantic{
     public void verifyUnaryOperator(String operator, TokenType tokenTypeRight){
         if(operator.equals("not") && tokenTypeRight != TokenType.BOOLEAN)
         {
-            SemanticErros.incompatibleType(TokenType.NOT, tokenTypeRight, lexer.line);
+            SemanticErros.incompatibleTypes(lexer.line);
         }
         if((operator.equals("+") || operator.equals("-")) && (tokenTypeRight != TokenType.INT))
         {
-            SemanticErros.incompatibleType(TokenType.INT, tokenTypeRight, lexer.line);
+            SemanticErros.incompatibleTypes(lexer.line);
         }
     }
 
@@ -1517,7 +1516,7 @@ class Semantic{
             return tokenTypeRight;
         }
 
-        SemanticErros.incompatibleType(tokenTypeLeft, tokenTypeRight, lexer.line);
+        SemanticErros.incompatibleTypes(lexer.line);
         return null;
     }
 
@@ -1531,43 +1530,27 @@ class Semantic{
 
 class SemanticErros{
     public static void declaredVariable(String variableName, int line){
-        System.out.println(String.format("[%d] VARIÁVEL '%s' JÁ DECLARADA", line, variableName));
-        breakProgram();
+        System.out.println(String.format("%d\nidentificador ja declarado [%s].", line, variableName));
+        System.exit(0);
     }
 
     public static void undeclaredVariable(String variableName, int line){
-        System.out.println(String.format("[%d] VARIÁVEL '%s' NÃO DECLARADA", line, variableName));
-        breakProgram();
+        System.out.println(String.format("%d\nidentificador nao declarado [%s].", line, variableName));
+        System.exit(0);
     }
 
-    public static void vetOverflow(String name, int size, int line){
-        System.out.println(String.format("[%d] TAMANHO DE VETOR NÃO SUPORTADO -> Nome do identificador: '%s' Tamanho em bytes: '%d'", line, name, size));
-        breakProgram();
-    }
-
-    public static void incompatibleType(TokenType tokenTypeLeft, TokenType tokenTypeRight, int line){
-        System.out.println(String.format("[%d] TIPOS INCOMPATIVEIS -> %s com %s", line, tokenTypeLeft.toString(), tokenTypeRight.toString()));
-        breakProgram();
-    }
-
-    public static void incompatibleOperator(String operator, TokenType tokenTypeLeft, TokenType tokenTypeRight, int line){
-        System.out.println(String.format("[%d] OPERADOR '%s' INVÁLIDOS PARA OS TIPOS '%s' e '%s'",
-                line, operator, tokenTypeLeft.toString(), tokenTypeRight.toString()));
-        breakProgram();
+    public static void vetOverflow(int line){
+        System.out.println(String.format("%d\ntamanho do vetor excede o maximo permitido.", line));
+        System.exit(0);
     }
 
     public static void changeConst(String symbolName, int line){
-        System.out.println(String.format("[%d] APENAS VARIÁVEIS PODEM SER ATRIBUIDAS -> Nome identificador %s", line, symbolName));
-        breakProgram();
+        System.out.println(String.format("%d\nclasse de identificador incompatível [%s].", line, symbolName));
+        System.exit(0);
     }
 
     public static void incompatibleTypes(int line){
         System.out.println(String.format("%d\ntipos incompativeis.", line));
-        System.exit(0);
-    }
-
-    private static void breakProgram(){
-        System.out.println("COMPILAÇÃO TERMINADA DEVIDO A ERRO SEMÂNTICO!");
         System.exit(0);
     }
 }

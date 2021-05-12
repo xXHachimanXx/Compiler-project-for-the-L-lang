@@ -4,7 +4,7 @@ int b := -2;
 
 main
 {
-  if (max > n1) then {
+  if ('c' > 'd') then {
       if (n[0] > n[2]) then max:=3; else max:=n[2];
     } else if (2 > n[2]) then max:=n[1]; else max:=n[2];
 
