@@ -956,7 +956,12 @@ class Parser {
 
             node = new BinaryExpressionNode(node, operator, parseAdditiveExpression());
 
-            this.semantic.verifyTypeCompability((BinaryExpressionNode) node); //Semantic Action
+            BinaryExpressionNode binaryNode = (BinaryExpressionNode) node;
+            this.semantic.verifyTypeCompability(binaryNode); //Semantic Action
+
+            node.end = this.codegen.doRelationalExpression(
+                operator, binaryNode.leftExpression.end, binaryNode.rightExpression.end
+            );
         }
 
         return node;
@@ -1120,7 +1125,7 @@ class Parser {
         return node;
     }
 
-    AssignStatementNode parseAssignStatement() throws IOException {
+    AssignStatementNode 1gnStatement() throws IOException {
         AssignStatementNode node;
         ExpressionNode subscriptExpr = null;
         String identifier = currentToken.value;
@@ -1736,10 +1741,42 @@ class CodeGenerator {
                 break;
 
             case "and":
+                addCode(String.format("land %d %d %d", op1Addr, op2Addr, addr));
                 temp += 1;
                 break;
         }
 
+        return addr;
+    }
+
+    public int doRelationalExpression(String operator, int op1Addr, int op2Addr) {
+        int addr = temp;
+        switch (operator) {
+            case "=":
+                addCode(String.format("rel_e %d %d %d", op1Addr, op2Addr, addr));
+                temp += 1;
+                break;
+            case "<>":
+                addCode(String.format("rel_ne %d %d %d", op1Addr, op2Addr, addr));
+                temp += 1;
+                break;
+            case "<":
+                addCode(String.format("rel_l %d %d %d", op1Addr, op2Addr, addr));
+                temp += 1;
+                break;
+            case ">=":
+                addCode(String.format("rel_ge %d %d %d", op1Addr, op2Addr, addr));
+                temp += 1;
+                break;
+            case ">":
+                addCode(String.format("rel_g %d %d %d", op1Addr, op2Addr, addr));
+                temp += 1;
+                break;
+            case "<=":
+                addCode(String.format("rel_le %d %d %d", op1Addr, op2Addr, addr));
+                temp += 1;
+                break;
+        }
         return addr;
     }
 
