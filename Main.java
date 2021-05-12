@@ -951,7 +951,12 @@ class Parser {
 
             node = new BinaryExpressionNode(node, operator, parseAdditiveExpression());
 
-            this.semantic.verifyTypeCompability((BinaryExpressionNode) node); //Semantic Action
+            BinaryExpressionNode binaryNode = (BinaryExpressionNode) node;
+            this.semantic.verifyTypeCompability(binaryNode); //Semantic Action
+
+            node.end = this.codegen.doRelationalExpression(
+                operator, binaryNode.leftExpression.end, binaryNode.rightExpression.end
+            );
         }
 
         return node;
@@ -1744,10 +1749,26 @@ class CodeGenerator {
                 break;
 
             case "and":
+                addCode(String.format("land %d %d %d", op1Addr, op2Addr, addr));
                 temp += 1;
                 break;
         }
 
+        return addr;
+    }
+
+    public int doRelationalExpression(String operator, int op1Addr, int op2Addr) {
+        int addr = temp;
+        switch (operator) {
+            case ">=":
+                addCode(String.format("relational %d %d %d", op1Addr, op2Addr, addr));
+                temp += 2;
+                break;
+
+            // case "or":
+            //     temp += 1;
+            //     break;
+        }
         return addr;
     }
 
