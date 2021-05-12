@@ -91,6 +91,132 @@ land macro value1Ptr, value2Ptr, tempPtr
     mov ds:[tempPtr], ax
 endm
 
+; =
+rel_e macro value1Ptr, value2Ptr, tempPtr
+    mov ax, ds:[value1Ptr]
+    mov bx, ds:[value2Ptr]
+
+    mov ah, 00h
+    mov bh, 00h
+
+    cmp ax, bx
+
+    je RotVerdadeiro
+    mov ax, 00h
+    jmp RotFim
+
+RotVerdadeiro:
+    mov ax, 01h
+
+RotFim:
+    mov ds:[tempPtr], ax
+endm
+
+; <>
+rel_ne macro value1Ptr, value2Ptr, tempPtr
+    mov ax, ds:[value1Ptr]
+    mov bx, ds:[value2Ptr]
+
+    mov ah, 00h
+    mov bh, 00h
+
+    cmp ax, bx
+
+    jne RotVerdadeiro
+    mov ax, 00h
+    jmp RotFim
+
+RotVerdadeiro:
+    mov ax, 01h
+
+RotFim:
+    mov ds:[tempPtr], ax
+endm
+
+; <
+rel_l macro value1Ptr, value2Ptr, tempPtr
+    mov ax, ds:[value1Ptr]
+    mov bx, ds:[value2Ptr]
+
+    mov ah, 00h
+    mov bh, 00h
+
+    cmp ax, bx
+
+    jl RotVerdadeiro
+    mov ax, 00h
+    jmp RotFim
+
+RotVerdadeiro:
+    mov ax, 01h
+
+RotFim:
+    mov ds:[tempPtr], ax
+endm
+
+; >
+rel_g macro value1Ptr, value2Ptr, tempPtr
+    mov ax, ds:[value1Ptr]
+    mov bx, ds:[value2Ptr]
+
+    mov ah, 00h
+    mov bh, 00h
+
+    cmp ax, bx
+
+    jg RotVerdadeiro
+    mov ax, 00h
+    jmp RotFim
+
+RotVerdadeiro:
+    mov ax, 01h
+
+RotFim:
+    mov ds:[tempPtr], ax
+endm
+
+; >=
+rel_ge macro value1Ptr, value2Ptr, tempPtr
+    mov ax, ds:[value1Ptr]
+    mov bx, ds:[value2Ptr]
+
+    mov ah, 00h
+    mov bh, 00h
+
+    cmp ax, bx
+
+    jge RotVerdadeiro
+    mov ax, 00h
+    jmp RotFim
+
+RotVerdadeiro:
+    mov ax, 01h
+
+RotFim:
+    mov ds:[tempPtr], ax
+endm
+
+; <=
+rel_le macro value1Ptr, value2Ptr, tempPtr
+    mov ax, ds:[value1Ptr]
+    mov bx, ds:[value2Ptr]
+
+    mov ah, 00h
+    mov bh, 00h
+
+    cmp ax, bx
+
+    jle RotVerdadeiro
+    mov ax, 00h
+    jmp RotFim
+
+RotVerdadeiro:
+    mov ax, 01h
+
+RotFim:
+    mov ds:[tempPtr], ax
+endm
+
 print macro ptr
     mov dx, ptr
     mov ah, 09h
