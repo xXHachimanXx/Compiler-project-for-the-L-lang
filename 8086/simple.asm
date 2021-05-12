@@ -303,8 +303,8 @@ data segment
     valor3 dw 7
     a dw 10
     b dw 20
-    db "cu", '$'
-    db "0", '$'
+    db "pao ", '$'
+    db "-00000", '$'
 data ends
 
 ; --------------- CODE
@@ -321,9 +321,8 @@ start:
     createIntTemp 10, 6
     createIntTemp 20, 8
     print 16397
-    rel_e 16393 16395 10
-    boolToStr 10 16400
-    print 16400
+    intToStr 16393 16402
+    print 16402
     print 16384
 
     MOV AH, 4CH ; Exit

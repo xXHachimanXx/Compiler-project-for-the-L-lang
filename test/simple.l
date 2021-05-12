@@ -11,6 +11,6 @@ main {
     writeln(valor3 * -2);
     writeln(c);
     */
-
-    writeln("cu", a = b);
+    a := b;
+    writeln("pao ", a);
 }

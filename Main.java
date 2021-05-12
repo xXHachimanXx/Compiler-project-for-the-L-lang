@@ -1120,7 +1120,7 @@ class Parser {
         return node;
     }
 
-    AssignStatementNode parseAssignStatement() throws IOException {
+    AssignStatementNode 1gnStatement() throws IOException {
         AssignStatementNode node;
         ExpressionNode subscriptExpr = null;
         String identifier = currentToken.value;
@@ -1733,7 +1733,7 @@ class CodeGenerator {
 
             case "and":
                 addCode(String.format("land %d %d %d", op1Addr, op2Addr, addr));
-                temp += 2;
+                temp += 1;
                 break;
         }
 
@@ -1745,27 +1745,27 @@ class CodeGenerator {
         switch (operator) {
             case "=":
                 addCode(String.format("rel_e %d %d %d", op1Addr, op2Addr, addr));
-                temp += 2;
+                temp += 1;
                 break;
             case "<>":
                 addCode(String.format("rel_ne %d %d %d", op1Addr, op2Addr, addr));
-                temp += 2;
+                temp += 1;
                 break;
             case "<":
                 addCode(String.format("rel_l %d %d %d", op1Addr, op2Addr, addr));
-                temp += 2;
+                temp += 1;
                 break;
             case ">=":
                 addCode(String.format("rel_ge %d %d %d", op1Addr, op2Addr, addr));
-                temp += 2;
+                temp += 1;
                 break;
             case ">":
                 addCode(String.format("rel_g %d %d %d", op1Addr, op2Addr, addr));
-                temp += 2;
+                temp += 1;
                 break;
             case "<=":
                 addCode(String.format("rel_le %d %d %d", op1Addr, op2Addr, addr));
-                temp += 2;
+                temp += 1;
                 break;
         }
         return addr;
