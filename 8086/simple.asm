@@ -91,6 +91,132 @@ land macro value1Ptr, value2Ptr, tempPtr
     mov ds:[tempPtr], ax
 endm
 
+; =
+rel_e macro value1Ptr, value2Ptr, tempPtr
+    mov ax, ds:[value1Ptr]
+    mov bx, ds:[value2Ptr]
+
+    mov ah, 00h
+    mov bh, 00h
+
+    cmp ax, bx
+
+    je RotVerdadeiro
+    mov ax, 00h
+    jmp RotFim
+
+RotVerdadeiro:
+    mov ax, 01h
+
+RotFim:
+    mov ds:[tempPtr], ax
+endm
+
+; <>
+rel_ne macro value1Ptr, value2Ptr, tempPtr
+    mov ax, ds:[value1Ptr]
+    mov bx, ds:[value2Ptr]
+
+    mov ah, 00h
+    mov bh, 00h
+
+    cmp ax, bx
+
+    jne RotVerdadeiro
+    mov ax, 00h
+    jmp RotFim
+
+RotVerdadeiro:
+    mov ax, 01h
+
+RotFim:
+    mov ds:[tempPtr], ax
+endm
+
+; <
+rel_l macro value1Ptr, value2Ptr, tempPtr
+    mov ax, ds:[value1Ptr]
+    mov bx, ds:[value2Ptr]
+
+    mov ah, 00h
+    mov bh, 00h
+
+    cmp ax, bx
+
+    jl RotVerdadeiro
+    mov ax, 00h
+    jmp RotFim
+
+RotVerdadeiro:
+    mov ax, 01h
+
+RotFim:
+    mov ds:[tempPtr], ax
+endm
+
+; >
+rel_g macro value1Ptr, value2Ptr, tempPtr
+    mov ax, ds:[value1Ptr]
+    mov bx, ds:[value2Ptr]
+
+    mov ah, 00h
+    mov bh, 00h
+
+    cmp ax, bx
+
+    jg RotVerdadeiro
+    mov ax, 00h
+    jmp RotFim
+
+RotVerdadeiro:
+    mov ax, 01h
+
+RotFim:
+    mov ds:[tempPtr], ax
+endm
+
+; >=
+rel_ge macro value1Ptr, value2Ptr, tempPtr
+    mov ax, ds:[value1Ptr]
+    mov bx, ds:[value2Ptr]
+
+    mov ah, 00h
+    mov bh, 00h
+
+    cmp ax, bx
+
+    jge RotVerdadeiro
+    mov ax, 00h
+    jmp RotFim
+
+RotVerdadeiro:
+    mov ax, 01h
+
+RotFim:
+    mov ds:[tempPtr], ax
+endm
+
+; <=
+rel_le macro value1Ptr, value2Ptr, tempPtr
+    mov ax, ds:[value1Ptr]
+    mov bx, ds:[value2Ptr]
+
+    mov ah, 00h
+    mov bh, 00h
+
+    cmp ax, bx
+
+    jle RotVerdadeiro
+    mov ax, 00h
+    jmp RotFim
+
+RotVerdadeiro:
+    mov ax, 01h
+
+RotFim:
+    mov ds:[tempPtr], ax
+endm
+
 print macro ptr
     mov dx, ptr
     mov ah, 09h
@@ -175,10 +301,9 @@ data segment
     valor1 dw -5
     valor2 dw 10
     valor3 dw 7
-    c db '2'
-    db "-00000", '$'
-    db "-00000", '$'
-    db "-00000", '$'
+    a dw 10
+    b dw 20
+    db "cu", '$'
     db "0", '$'
 data ends
 
@@ -193,25 +318,12 @@ start:
     createIntTemp 5, 0
     createIntTemp 10, 2
     createIntTemp 7, 4
-    createCharTemp '2' 6
-    createIntTemp 2, 7
-    multiply 16387 7 9
-    intToStr 9 16394
-    print 16394
-    print 16384
-    createIntTemp 2, 11
-    multiply 16389 11 13
-    intToStr 13 16401
-    print 16401
-    print 16384
-    createIntTemp 2, 15
-    unaryMinus 15 17
-    multiply 16391 17 19
-    intToStr 19 16408
-    print 16408
-    print 16384
-    charToStr 16393 16415
-    print 16415
+    createIntTemp 10, 6
+    createIntTemp 20, 8
+    print 16397
+    rel_e 16393 16395 10
+    boolToStr 10 16400
+    print 16400
     print 16384
 
     MOV AH, 4CH ; Exit

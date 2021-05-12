@@ -12,5 +12,5 @@ main {
     writeln(c);
     */
 
-    writeln("cu", a >= b);
+    writeln("cu", a = b);
 }

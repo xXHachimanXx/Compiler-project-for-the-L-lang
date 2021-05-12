@@ -1750,7 +1750,7 @@ class CodeGenerator {
 
             case "and":
                 addCode(String.format("land %d %d %d", op1Addr, op2Addr, addr));
-                temp += 1;
+                temp += 2;
                 break;
         }
 
@@ -1760,14 +1760,30 @@ class CodeGenerator {
     public int doRelationalExpression(String operator, int op1Addr, int op2Addr) {
         int addr = temp;
         switch (operator) {
-            case ">=":
-                addCode(String.format("relational %d %d %d", op1Addr, op2Addr, addr));
+            case "=":
+                addCode(String.format("rel_e %d %d %d", op1Addr, op2Addr, addr));
                 temp += 2;
                 break;
-
-            // case "or":
-            //     temp += 1;
-            //     break;
+            case "<>":
+                addCode(String.format("rel_ne %d %d %d", op1Addr, op2Addr, addr));
+                temp += 2;
+                break;
+            case "<":
+                addCode(String.format("rel_l %d %d %d", op1Addr, op2Addr, addr));
+                temp += 2;
+                break;
+            case ">=":
+                addCode(String.format("rel_ge %d %d %d", op1Addr, op2Addr, addr));
+                temp += 2;
+                break;
+            case ">":
+                addCode(String.format("rel_g %d %d %d", op1Addr, op2Addr, addr));
+                temp += 2;
+                break;
+            case "<=":
+                addCode(String.format("rel_le %d %d %d", op1Addr, op2Addr, addr));
+                temp += 2;
+                break;
         }
         return addr;
     }
