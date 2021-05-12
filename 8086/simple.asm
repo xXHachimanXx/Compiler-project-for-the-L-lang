@@ -92,7 +92,8 @@ land macro value1Ptr, value2Ptr, tempPtr
 endm
 
 ; =
-rel_e macro value1Ptr, value2Ptr, tempPtr
+relEquals macro value1Ptr, value2Ptr, tempPtr
+    LOCAL RotVerdadeiro, RotFim
     mov ax, ds:[value1Ptr]
     mov bx, ds:[value2Ptr]
 
@@ -113,7 +114,8 @@ RotFim:
 endm
 
 ; <>
-rel_ne macro value1Ptr, value2Ptr, tempPtr
+relNotEquals macro value1Ptr, value2Ptr, tempPtr
+    LOCAL RotVerdadeiro, RotFim
     mov ax, ds:[value1Ptr]
     mov bx, ds:[value2Ptr]
 
@@ -134,7 +136,8 @@ RotFim:
 endm
 
 ; <
-rel_l macro value1Ptr, value2Ptr, tempPtr
+relLessThan macro value1Ptr, value2Ptr, tempPtr
+    LOCAL RotVerdadeiro, RotFim
     mov ax, ds:[value1Ptr]
     mov bx, ds:[value2Ptr]
 
@@ -155,7 +158,8 @@ RotFim:
 endm
 
 ; >
-rel_g macro value1Ptr, value2Ptr, tempPtr
+relGreaterThan macro value1Ptr, value2Ptr, tempPtr
+    LOCAL RotVerdadeiro, RotFim
     mov ax, ds:[value1Ptr]
     mov bx, ds:[value2Ptr]
 
@@ -176,7 +180,8 @@ RotFim:
 endm
 
 ; >=
-rel_ge macro value1Ptr, value2Ptr, tempPtr
+relGreaterThanOrEqualTo macro value1Ptr, value2Ptr, tempPtr
+    LOCAL RotVerdadeiro, RotFim
     mov ax, ds:[value1Ptr]
     mov bx, ds:[value2Ptr]
 
@@ -197,7 +202,8 @@ RotFim:
 endm
 
 ; <=
-rel_le macro value1Ptr, value2Ptr, tempPtr
+relLessThanOrEqualTo macro value1Ptr, value2Ptr, tempPtr
+    LOCAL RotVerdadeiro, RotFim
     mov ax, ds:[value1Ptr]
     mov bx, ds:[value2Ptr]
 
@@ -216,6 +222,8 @@ RotVerdadeiro:
 RotFim:
     mov ds:[tempPtr], ax
 endm
+
+
 
 print macro ptr
     mov dx, ptr
