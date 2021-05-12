@@ -2,9 +2,7 @@
 <project version="4">
   <component name="ChangeListManager">
     <list default="true" id="d5ae3349-d451-49e4-9bfc-c5ca012f8f9c" name="Default Changelist" comment="verificando unicidade">
-      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/Main.java" beforeDir="false" afterPath="$PROJECT_DIR$/Main.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/test/exemplo3.l" beforeDir="false" afterPath="$PROJECT_DIR$/test/exemplo3.l" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -116,22 +114,22 @@
         </line-breakpoint>
         <line-breakpoint type="java-line">
           <url>file://$PROJECT_DIR$/Main.java</url>
-          <line>1444</line>
+          <line>1442</line>
           <option name="timeStamp" value="257" />
         </line-breakpoint>
         <line-breakpoint type="java-line">
           <url>file://$PROJECT_DIR$/Main.java</url>
-          <line>1476</line>
+          <line>1474</line>
           <option name="timeStamp" value="258" />
         </line-breakpoint>
         <line-breakpoint type="java-line">
           <url>file://$PROJECT_DIR$/Main.java</url>
-          <line>1150</line>
+          <line>1157</line>
           <option name="timeStamp" value="266" />
         </line-breakpoint>
         <line-breakpoint type="java-line">
           <url>file://$PROJECT_DIR$/Main.java</url>
-          <line>1104</line>
+          <line>1108</line>
           <option name="timeStamp" value="268" />
         </line-breakpoint>
       </breakpoints>

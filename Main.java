@@ -1125,7 +1125,7 @@ class Parser {
         return node;
     }
 
-    AssignStatementNode 1gnStatement() throws IOException {
+    AssignStatementNode parseAssignStatement() throws IOException {
         AssignStatementNode node;
         ExpressionNode subscriptExpr = null;
         String identifier = currentToken.value;
