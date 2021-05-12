@@ -3,6 +3,7 @@ int valor2 := +10;
 int valor3 := 7;
 int a := 10;
 int b := 20;
+int c[5];
 
 main {
     /*
@@ -12,5 +13,6 @@ main {
     writeln(c);
     */
     a := b;
-    writeln("pao ", a);
+    b := 30;
+    writeln("pao ", a, " ", b);
 }

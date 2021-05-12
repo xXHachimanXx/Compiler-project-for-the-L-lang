@@ -223,6 +223,13 @@ RotFim:
     mov ds:[tempPtr], ax
 endm
 
+assignVar macro value1Ptr, value2Ptr
+    ; mov ax, ds:[value1Ptr]
+    mov bx, ds:[value2Ptr]
+
+    mov ds:[value1Ptr], bx
+endm
+
 
 
 print macro ptr
@@ -311,7 +318,10 @@ data segment
     valor3 dw 7
     a dw 10
     b dw 20
+    c dw 5 DUP(?)
     db "pao ", '$'
+    db "-00000", '$'
+    db " ", '$'
     db "-00000", '$'
 data ends
 
@@ -328,9 +338,16 @@ start:
     createIntTemp 7, 4
     createIntTemp 10, 6
     createIntTemp 20, 8
-    print 16397
-    intToStr 16393 16402
-    print 16402
+    createIntTemp 5, 10
+    assignVar 16393 16395
+    createIntTemp 30, 12
+    assignVar 16395 12
+    print 16407
+    intToStr 16393 16412
+    print 16412
+    print 16419
+    intToStr 16395 16421
+    print 16421
     print 16384
 
     MOV AH, 4CH ; Exit

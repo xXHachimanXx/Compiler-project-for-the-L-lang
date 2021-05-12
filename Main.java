@@ -1152,6 +1152,8 @@ class Parser {
             if(s.type != TokenType.STRING && ParserUtils.isVet(s)){
                 SemanticErros.incompatibleTypes(lexer.line);
             }
+
+
         } else {
             node = new ArraySubscriptAssignStatementNode(
                     identifier, subscriptExpr, parseExpression()
@@ -1161,6 +1163,14 @@ class Parser {
         //Semantic Action
         this.semantic.verifyTypeCompability(identifier, semantic.getExpressionType(node.value));
         this.semantic.verifyClassCompatibility(identifier);
+
+        int idAddr = this.semantic.symTable.getSymbol(identifier).address;
+        if(subscriptExpr == null) {
+            this.codegen.doAssignStatement(
+                idAddr, node.value.end
+            );
+        }
+        
 
         return node;
     }
@@ -1777,6 +1787,15 @@ class CodeGenerator {
                 temp += 1;
                 break;
         }
+        return addr;
+    }
+
+    public int doAssignStatement(int op1Addr, int op2Addr) {
+        int addr = temp;
+
+        addCode(String.format("assignVar %d %d", op1Addr, op2Addr));
+        addr += 2;
+
         return addr;
     }
 

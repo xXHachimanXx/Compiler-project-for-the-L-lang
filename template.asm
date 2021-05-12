@@ -223,6 +223,13 @@ RotFim:
     mov ds:[tempPtr], ax
 endm
 
+assignVar macro value1Ptr, value2Ptr
+    ; mov ax, ds:[value1Ptr]
+    mov bx, ds:[value2Ptr]
+
+    mov ds:[value1Ptr], bx
+endm
+
 
 
 print macro ptr
