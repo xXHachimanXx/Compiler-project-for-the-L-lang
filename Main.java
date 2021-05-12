@@ -832,6 +832,9 @@ class Parser {
                     node.end = this.semantic.getDeclaredSymbol(identifier).address;
                 } else {
                     node = new ArraySubscriptExpressionNode(identifier, subscriptExpr);
+                    //Comentado por enquanto, não tem mensagem no tp pra isso
+                    //this.semantic.verifyVetIndex(semantic.getDeclaredSymbol(identifier), subscriptExpr); //Semantic Action
+
                     node.end = this.codegen.getArrayElement(
                         this.semantic.getDeclaredSymbol(identifier),
                         subscriptExpr.end
@@ -921,7 +924,9 @@ class Parser {
 
             node = new BinaryExpressionNode(node, operator, parseMultiplicativeExpression());
             BinaryExpressionNode binaryNode = (BinaryExpressionNode) node;
+
             this.semantic.verifyTypeCompability(binaryNode); //Semantic Action
+
             node.end = this.codegen.doAdditiveExpression(
                 operator, binaryNode.leftExpression.end, binaryNode.rightExpression.end
             );
@@ -981,7 +986,7 @@ class Parser {
             vetSize = intNode.value;
 
             //Semantic Action
-            this.semantic.verifyVetSize(identifier, ParserUtils.getTypeSize(tokenType, vetSize));
+            this.semantic.verifyVetSize(ParserUtils.getTypeSize(tokenType, vetSize));
 
             eat(TokenType.RIGHT_BRACKET);
         }
@@ -1121,7 +1126,7 @@ class Parser {
         String identifier = currentToken.value;
 
         //Semantic Action
-        this.semantic.verifyDeclaredVariable(identifier);
+        Symbol s = this.semantic.getDeclaredSymbol(identifier);
 
         eat();
 
@@ -1136,8 +1141,6 @@ class Parser {
         if (subscriptExpr == null) {
             node = new IdentifierAssignStatementNode(identifier, parseExpression());
 
-            //Semantic Action
-            Symbol s = this.semantic.symTable.getSymbol(identifier);
             if(s.type == TokenType.STRING && this.semantic.getExpressionType(node.value) != TokenType.STRING){
                 SemanticErros.incompatibleTypes(lexer.line);
             }
@@ -1355,14 +1358,20 @@ class Semantic{
         return symbol;
     }
 
-    public void verifyDeclaredVariable(String symbolName){
-        if(!containsSymbol(symbolName))
-            SemanticErros.undeclaredVariable(symbolName, lexer.line);
-    }
-
-    public void verifyVetSize(String symbolName, int size){
+    public void verifyVetSize(int size){
         if(size < 1 || size > 8000){
             SemanticErros.vetOverflow(lexer.line);
+        }
+    }
+
+    public void verifyVetIndex(Symbol s, ExpressionNode node){
+        if(!(node instanceof IntExpressionNode)){
+            SemanticErros.incompatibleTypes(lexer.line); //Semantic Action
+        }else{
+            int index = ((IntExpressionNode)node).value;
+            if(index < 0 || index > s.size){
+                SemanticErros.incompatibleTypes(lexer.line);
+            }
         }
     }
 

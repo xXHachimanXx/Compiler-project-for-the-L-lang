@@ -1,10 +1,11 @@
 /* Exemplo de Programa na linguagem L */
 
-int b := -2;
+int b[30];
 
 main
 {
-  if ('c' > 'd') then {
+    b[2]:=b[5];
+  if (b[50] > b[2]) then {
       if (n[0] > n[2]) then max:=3; else max:=n[2];
     } else if (2 > n[2]) then max:=n[1]; else max:=n[2];
 
