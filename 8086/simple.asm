@@ -339,9 +339,7 @@ start:
     createIntTemp 10, 6
     createIntTemp 20, 8
     createIntTemp 5, 10
-    assignVar 16393 16395
     createIntTemp 30, 12
-    assignVar 16395 12
     print 16407
     intToStr 16393 16412
     print 16412

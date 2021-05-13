@@ -1164,10 +1164,20 @@ class Parser {
         this.semantic.verifyTypeCompability(identifier, semantic.getExpressionType(node.value));
         this.semantic.verifyClassCompatibility(identifier);
 
-        int idAddr = this.semantic.symTable.getSymbol(identifier).address;
+        Symbol identifierSymbol = this.semantic.symTable.getSymbol(identifier);
+        
+        int idAddr = identifierSymbol.address;
+        TokenType idType = identifierSymbol.type;
+
         if(subscriptExpr == null) {
             this.codegen.doAssignStatement(
-                idAddr, node.value.end
+                idAddr, node.value.end, idType
+            );
+        }
+        else {
+            int idIndex = subscriptExpr.end;
+            this.codegen.doArrayAssignStatement(
+                idAddr, node.value.end, idIndex, idType
             );
         }
         
@@ -1790,10 +1800,24 @@ class CodeGenerator {
         return addr;
     }
 
-    public int doAssignStatement(int op1Addr, int op2Addr) {
+    public int doAssignStatement(int op1Addr, int op2Addr, TokenType idType) {
         int addr = temp;
 
-        addCode(String.format("assignVar %d %d", op1Addr, op2Addr));
+        if(idType == TokenType.INTEGER) {
+            addCode(String.format("assignVar %d %d", op1Addr, op2Addr));
+            addr += 2;
+        }
+        else {
+            addr += 1;
+        }
+
+        return addr;
+    }
+
+    public int doArrayAssignStatement(int op1Addr, int op2Addr, int idIndex, TokenType idType) {
+        int addr = temp;
+
+        addCode(String.format("assignArray %d %d %d", op1Addr, op2Addr, idIndex));
         addr += 2;
 
         return addr;
