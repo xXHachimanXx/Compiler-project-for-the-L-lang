@@ -19,18 +19,18 @@ createIntTemp macro value, tempPtr
 endm
 
 getNonIntArrayElement macro arrPtr, subscriptExprPtr, tempPtr
-    mov ax, ds:[subscriptExprPtr] ; ax = índice
-    add ax, arrPtr ; ax += endereço do arranjo
-    mov al, ds:[ax] ; Pega o elemento do arranjo
-    mov ds:[tempPtr], al ; Coloca na memória temporária
+    mov bx, ds:[subscriptExprPtr] ; ax = índice
+    add bx, arrPtr ; ax += endereço do arranjo
+    mov bl, ds:[bx] ; Pega o elemento do arranjo
+    mov ds:[tempPtr], bl ; Coloca na memória temporária
 endm
 
 getIntArrayElement macro arrPtr, subscriptExprPtr, tempPtr
-    mov ax, ds:[subscriptExprPtr] ; ax = índice
-    add ax, ax ; ax = índice * 2
-    add ax, arrPtr ; ax += endereço do arranjo
-    mov ax, ds:[ax] ; Pega o elemento do arranjo
-    mov ds:[tempPtr], ax ; Coloca na memória temporária
+    mov bx, ds:[subscriptExprPtr] ; ax = índice
+    add bx, bx ; ax = índice * 2
+    add bx, arrPtr ; ax += endereço do arranjo
+    mov bx, ds:[bx] ; Pega o elemento do arranjo
+    mov ds:[tempPtr], bx ; Coloca na memória temporária
 endm
 
 negate macro valuePtr, tempPtr
@@ -230,6 +230,19 @@ assignVar macro value1Ptr, value2Ptr
     mov ds:[value1Ptr], bx
 endm
 
+; end_id + index * type
+assignArray macro value1Ptr, value2Ptr, idType, idIndexPtr
+    ; calcular endereco array
+    mov ax, idType
+    mov cx, ds:[idIndexPtr]
+    mul cx
+    add ax, value1Ptr
+    ; Usar bx para index de ds
+    mov bx, ax
+    ; mover valor para ds
+    mov ax, ds:[value2Ptr]
+    mov ds:[bx], ax
+endm
 
 
 print macro ptr

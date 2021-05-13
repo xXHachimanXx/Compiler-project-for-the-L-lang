@@ -1153,7 +1153,6 @@ class Parser {
                 SemanticErros.incompatibleTypes(lexer.line);
             }
 
-
         } else {
             node = new ArraySubscriptAssignStatementNode(
                     identifier, subscriptExpr, parseExpression()
@@ -1175,9 +1174,10 @@ class Parser {
             );
         }
         else {
-            int idIndex = subscriptExpr.end;
+            int idIndexAddr = subscriptExpr.end;
+            int exprAddr = node.value.end;
             this.codegen.doArrayAssignStatement(
-                idAddr, node.value.end, idIndex, idType
+                idAddr, exprAddr, idType, idIndexAddr
             );
         }
         
@@ -1802,23 +1802,26 @@ class CodeGenerator {
 
     public int doAssignStatement(int op1Addr, int op2Addr, TokenType idType) {
         int addr = temp;
-
-        if(idType == TokenType.INTEGER) {
-            addCode(String.format("assignVar %d %d", op1Addr, op2Addr));
-            addr += 2;
-        }
-        else {
-            addr += 1;
-        }
+        
+        addCode(String.format("assignVar %d %d", op1Addr, op2Addr));
+        
+        addr = (idType == TokenType.INTEGER)? addr+2 : addr+1;
 
         return addr;
     }
 
-    public int doArrayAssignStatement(int op1Addr, int op2Addr, int idIndex, TokenType idType) {
+    public int doArrayAssignStatement(int idAddr, int exprAddr, TokenType idType, int idIndexAddr) {
         int addr = temp;
 
-        addCode(String.format("assignArray %d %d %d", op1Addr, op2Addr, idIndex));
-        addr += 2;
+        if(idType == TokenType.INT) {
+            addCode(String.format("assignArray %d %d %d %d", idAddr, exprAddr, 2, idIndexAddr));
+            addr += 2;
+        }
+
+        else {
+            addCode(String.format("assignArray %d %d %d %d", idAddr, exprAddr, 1, idIndexAddr));
+            addr += 1;
+        }
 
         return addr;
     }

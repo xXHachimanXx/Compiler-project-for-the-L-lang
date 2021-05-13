@@ -19,18 +19,18 @@ createIntTemp macro value, tempPtr
 endm
 
 getNonIntArrayElement macro arrPtr, subscriptExprPtr, tempPtr
-    mov ax, ds:[subscriptExprPtr] ; ax = índice
-    add ax, arrPtr ; ax += endereço do arranjo
-    mov al, ds:[ax] ; Pega o elemento do arranjo
-    mov ds:[tempPtr], al ; Coloca na memória temporária
+    mov bx, ds:[subscriptExprPtr] ; ax = índice
+    add bx, arrPtr ; ax += endereço do arranjo
+    mov bl, ds:[bx] ; Pega o elemento do arranjo
+    mov ds:[tempPtr], bl ; Coloca na memória temporária
 endm
 
 getIntArrayElement macro arrPtr, subscriptExprPtr, tempPtr
-    mov ax, ds:[subscriptExprPtr] ; ax = índice
-    add ax, ax ; ax = índice * 2
-    add ax, arrPtr ; ax += endereço do arranjo
-    mov ax, ds:[ax] ; Pega o elemento do arranjo
-    mov ds:[tempPtr], ax ; Coloca na memória temporária
+    mov bx, ds:[subscriptExprPtr] ; ax = índice
+    add bx, bx ; ax = índice * 2
+    add bx, arrPtr ; ax += endereço do arranjo
+    mov bx, ds:[bx] ; Pega o elemento do arranjo
+    mov ds:[tempPtr], bx ; Coloca na memória temporária
 endm
 
 negate macro valuePtr, tempPtr
@@ -223,13 +223,25 @@ RotFim:
     mov ds:[tempPtr], ax
 endm
 
-assignVar macro value1Ptr, value2Ptr
-    ; mov ax, ds:[value1Ptr]
-    mov bx, ds:[value2Ptr]
+assignVar macro idAddr, valuePtr
+    mov bx, ds:[valuePtr]
 
-    mov ds:[value1Ptr], bx
+    mov ds:[idAddr], bx
 endm
 
+; end_id + index * type
+assignArray macro idAddr, valuePtr, idType, idIndexPtr
+    ; calcular endereco array
+    mov ax, idType
+    mov cx, ds:[idIndexPtr]
+    mul cx
+    add ax, idAddr
+    ; Usar bx para index de ds
+    mov bx, ax
+    ; mover valor para ds
+    mov ax, ds:[valuePtr]
+    mov ds:[bx], ax
+endm
 
 
 print macro ptr
@@ -313,13 +325,7 @@ endm
 data segment
     db 4000h DUP(64)
     db 13, 10, '$'
-    valor1 dw -5
-    valor2 dw 10
-    valor3 dw 7
-    a dw 10
-    b dw 20
     c dw 5 DUP(?)
-    db "pao ", '$'
     db "-00000", '$'
     db " ", '$'
     db "-00000", '$'
@@ -334,18 +340,23 @@ start:
     MOV DS, AX
 
     createIntTemp 5, 0
-    createIntTemp 10, 2
-    createIntTemp 7, 4
-    createIntTemp 10, 6
-    createIntTemp 20, 8
-    createIntTemp 5, 10
-    createIntTemp 30, 12
-    print 16407
-    intToStr 16393 16412
-    print 16412
-    print 16419
-    intToStr 16395 16421
-    print 16421
+    createIntTemp 0, 2
+    createIntTemp 20, 4
+    createIntTemp 20, 6
+    sum 4 6 8
+    assignArray 16387 8 2 2
+    createIntTemp 1, 10
+    createIntTemp 1, 12
+    assignArray 16387 12 2 10
+    createIntTemp 0, 14
+    getIntArrayElement 16387, 14, 16
+    intToStr 16 16397
+    print 16397
+    print 16404
+    createIntTemp 1, 18
+    getIntArrayElement 16387, 18, 20
+    intToStr 20 16406
+    print 16406
     print 16384
 
     MOV AH, 4CH ; Exit
