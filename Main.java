@@ -1763,27 +1763,27 @@ class CodeGenerator {
         int addr = temp;
         switch (operator) {
             case "=":
-                addCode(String.format("rel_e %d %d %d", op1Addr, op2Addr, addr));
+                addCode(String.format("relEquals %d %d %d", op1Addr, op2Addr, addr));
                 temp += 1;
                 break;
             case "<>":
-                addCode(String.format("rel_ne %d %d %d", op1Addr, op2Addr, addr));
+                addCode(String.format("relNotEquals %d %d %d", op1Addr, op2Addr, addr));
                 temp += 1;
                 break;
             case "<":
-                addCode(String.format("rel_l %d %d %d", op1Addr, op2Addr, addr));
+                addCode(String.format("relLessThan %d %d %d", op1Addr, op2Addr, addr));
                 temp += 1;
                 break;
             case ">=":
-                addCode(String.format("rel_ge %d %d %d", op1Addr, op2Addr, addr));
+                addCode(String.format("relGreaterThanOrEqualTo %d %d %d", op1Addr, op2Addr, addr));
                 temp += 1;
                 break;
             case ">":
-                addCode(String.format("rel_g %d %d %d", op1Addr, op2Addr, addr));
+                addCode(String.format("relGreaterThan %d %d %d", op1Addr, op2Addr, addr));
                 temp += 1;
                 break;
             case "<=":
-                addCode(String.format("rel_le %d %d %d", op1Addr, op2Addr, addr));
+                addCode(String.format("relGreaterThanOrEqualTo %d %d %d", op1Addr, op2Addr, addr));
                 temp += 1;
                 break;
         }
