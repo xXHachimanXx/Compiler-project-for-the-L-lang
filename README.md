@@ -180,7 +180,6 @@ EXPRESSION ::= RELATIONAL_EXPRESSION
     }
 }
 {3} {
-    # TODO: VERIFICAR A SEGUINTE POSSIBILIDADE `char n[5] = "abcd";`
     se IDENTIFIER.tipo != CONST.tipo entao ERRO
     se IDENTIFIER.tipo = inteiro entao {
         contador_global_endereco += 2
@@ -207,40 +206,6 @@ EXPRESSION ::= RELATIONAL_EXPRESSION
     senao {
         contador_global_endereco += 1
         db 0 # declare byte
-    }
-}
-
-<b>VAR_DECL -> IDENTIFIER {1} ':=' CONST {2}</b>
-{1} {
-    se tabela.get(IDENTIFIER.lex) = null entao ERRO
-    IDENTIFIER.tipo = VAR_DECL.tipo
-}
-{2} {
-    se IDENTIFIER.tipo != CONST.tipo entao ERRO
-    se IDENTIFIER.tipo = inteiro entao {
-        dw CONST.lex
-    } senao se IDENTIFIER.tipo = caractere entao {
-        db CONST.lex
-    } senao se IDENTIFIER.tipo = booleano entao {
-        se CONST.lex = TRUE entao {
-            db 1
-        } senao {
-            db 0
-        }
-    }
-}
-
-<b>VAR_DECL -> IDENTIFIER {1} '[' CONST {2} ']'</b>
-{1} {
-    se tabela.get(IDENTIFIER.lex) = null entao ERRO
-    IDENTIFIER.tipo = VAR_DECL.tipo
-}
-{2} {
-    se CONST.tipo != inteiro entao ERRO
-    se IDENTIFIER.tipo = inteiro entao {
-        dw CONST.lex DUP(?)
-    } senao {
-        db CONST.lex DUP(?)
     }
 }
 
