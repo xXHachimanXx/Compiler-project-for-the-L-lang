@@ -112,21 +112,37 @@ EXPRESSION ::= RELATIONAL_EXPRESSION
 ## Language Grammar with Translation Scheme using professor's notation
 
 <pre>
-<b>PROGRAM -> { [VAR_DECLS | CONST_DECLS] ';' }* 'main' '{' {TERMINATED_STATEMENT}* '}'</b>
+<b>PROGRAM -> {1} { [VAR_DECLS | CONST_DECLS] ';' }* 'main' '{' {TERMINATED_STATEMENT}* '}' {2}</b>
+{1} {
+    MOV AX, data
+    MOV DS, AX
+}
+{2} {
+    MOV AH, 4CH
+    INT 21H
+}
 
 <b>CONST_DECLS -> 'final' CONST_DECL {',' CONST_DECL}*</b>
 
 <b>CONST_DECL -> IDENTIFIER {1} '=' CONST {2}</b>
 {1} {
-    se JA_DECLARADO(IDENTIFIER.lex) entao ERRO
+    se tabela.get(IDENTIFIER.lex) != null entao ERRO
+    IDENTIFIER.classe = constante
+    IDENTIFIER.tamanho = 0
+    IDENTIFIER.endereco = contador_global_endereco
 }
 {2} {
     IDENTIFIER.tipo = CONST.tipo
     se IDENTIFIER.tipo = inteiro entao {
-        dw CONST.lex
-    } senao se IDENTIFIER.tipo = caractere entao {
-        db ((int) CONST.lex)
-    } senao se IDENTIFIER.tipo = booleano entao {
+        contador_global_endereco += 2
+        dw CONST.lex   # declare word
+    }
+    senao se IDENTIFIER.tipo = caractere entao {
+        contador_global_endereco += 1
+        db CONST.lex   # declare byte
+    }
+    senao se IDENTIFIER.tipo = booleano entao {
+        contador_global_endereco += 1
         se CONST.lex = TRUE entao {
             db 1
         } senao {
@@ -135,46 +151,68 @@ EXPRESSION ::= RELATIONAL_EXPRESSION
     }
 }
 
-<b>VAR_DECLS -> 'int' {1} VAR_DECL {',' {2} VAR_DECL1}*</b>
+<b>VAR_DECLS -> ('int' | 'char' | 'boolean') {1} VAR_DECL {',' {2} VAR_DECL1}*</b>
 {1} {
-    VAR_DECL.tipo = inteiro # passa o tipo por parâmetro para VAR_DECL
+    tipo = guardar o tipo ('int' | 'char' | 'boolean') numa variavel
+    VAR_DECL.tipo = tipo # passa o tipo por parâmetro para VAR_DECL
 }
 {2} {
-    VAR_DECL1.tipo = inteiro # passa o tipo por parâmetro para VAR_DECL1
+    VAR_DECL1.tipo = tipo # passa o tipo por parâmetro para VAR_DECL1
 }
 
-<b>VAR_DECLS -> 'char' {1} VAR_DECL {',' {2} VAR_DECL1}*</b>
+<b>VAR_DECL -> IDENTIFIER {1} ( '[' CONST {2} ']' | ':=' CONST {3} | lambda {4} )</b>
 {1} {
-    VAR_DECL.tipo = caractere # passa o tipo por parâmetro para VAR_DECL
-}
-{2} {
-    VAR_DECL1.tipo = caractere # passa o tipo por parâmetro para VAR_DECL1
-}
-
-<b>VAR_DECLS -> 'boolean' {1} VAR_DECL {',' {2} VAR_DECL1}*</b>
-{1} {
-    VAR_DECL.tipo = booleano # passa o tipo por parâmetro para VAR_DECL
-}
-{2} {
-    VAR_DECL1.tipo = booleano # passa o tipo por parâmetro para VAR_DECL1
-}
-
-<b>VAR_DECL -> IDENTIFIER {1}</b>
-{1} {
-    se JA_DECLARADO(IDENTIFIER.lex) entao ERRO
+    se tabela.get(IDENTIFIER.lex) != null entao ERRO
+    IDENTIFIER.classe = variavel
+    IDENTIFIER.endereco = contador_global_endereco
     IDENTIFIER.tipo = VAR_DECL.tipo
+    IDENTIFIER.tamanho = 0
+}
+{2} {
+    IDENTIFIER.tamanho = CONST.lex
     se IDENTIFIER.tipo = inteiro entao {
+        contador_global_endereco += IDENTIFIER.tamanho * 2
+        dw IDENTIFIER.tamanho DUP(?) # declare word array
+    }
+    senao {
+        contador_global_endereco += IDENTIFIER.tamanho
+        db IDENTIFIER.tamanho DUP(?) # declare byte array
+    }
+}
+{3} {
+    # TODO: VERIFICAR A SEGUINTE POSSIBILIDADE `char n[5] = "abcd";`
+    se IDENTIFIER.tipo != CONST.tipo entao ERRO
+    se IDENTIFIER.tipo = inteiro entao {
+        contador_global_endereco += 2
+        dw CONST.lex # declare word
+    }
+    senao se IDENTIFIER.tipo = caractere entao {
+        contador_global_endereco += 1
+        db CONST.lex # declare byte
+    }
+    senao se IDENTIFIER.tipo = booleano entao {
+        contador_global_endereco += 1
+        se CONST.lex = TRUE entao {
+            db 1
+        } senao {
+            db 0
+        }
+    }
+}
+{4} {
+    se IDENTIFIER.tipo = inteiro entao {
+        contador_global_endereco += 2
         dw 0 # declare word
-    } senao se IDENTIFIER.tipo = caractere entao {
+    }
+    senao {
+        contador_global_endereco += 1
         db 0 # declare byte
-    } senao se IDENTIFIER.tipo = booleano entao {
-        db 0
     }
 }
 
 <b>VAR_DECL -> IDENTIFIER {1} ':=' CONST {2}</b>
 {1} {
-    se JA_DECLARADO(IDENTIFIER.lex) entao ERRO
+    se tabela.get(IDENTIFIER.lex) = null entao ERRO
     IDENTIFIER.tipo = VAR_DECL.tipo
 }
 {2} {
@@ -182,7 +220,7 @@ EXPRESSION ::= RELATIONAL_EXPRESSION
     se IDENTIFIER.tipo = inteiro entao {
         dw CONST.lex
     } senao se IDENTIFIER.tipo = caractere entao {
-        db ((int) CONST.lex)
+        db CONST.lex
     } senao se IDENTIFIER.tipo = booleano entao {
         se CONST.lex = TRUE entao {
             db 1
@@ -194,7 +232,7 @@ EXPRESSION ::= RELATIONAL_EXPRESSION
 
 <b>VAR_DECL -> IDENTIFIER {1} '[' CONST {2} ']'</b>
 {1} {
-    se JA_DECLARADO(IDENTIFIER.lex) entao ERRO
+    se tabela.get(IDENTIFIER.lex) = null entao ERRO
     IDENTIFIER.tipo = VAR_DECL.tipo
 }
 {2} {
@@ -246,40 +284,84 @@ EXPRESSION ::= RELATIONAL_EXPRESSION
 <b>RELATIONAL_EXPRESSION -> ADDITIVE_EXPRESSION {'<=' ADDITIVE_EXPRESSION1}*</b>
 <b>RELATIONAL_EXPRESSION -> ADDITIVE_EXPRESSION {'>=' ADDITIVE_EXPRESSION1}*</b>
 
-<b>ADDITIVE_EXPRESSION -> MULTIPLICATIVE_EXPRESSION {1} {'+' MULTIPLICATIVE_EXPRESSION1 {2}}*</b>
+<b>ADDITIVE_EXPRESSION -> MULTIPLICATIVE_EXPRESSION {1} {('+' | '-' | 'or') {2} MULTIPLICATIVE_EXPRESSION1 {3}}*</b>
 {1} {
     ADDITIVE_EXPRESSION.tipo = MULTIPLICATIVE_EXPRESSION.tipo
     ADDITIVE_EXPRESSION.end = MULTIPLICATIVE_EXPRESSION.end
 }
 {2} {
-    se ADDITIVE_EXPRESSION.tipo != inteiro ou MULTIPLICATIVE_EXPRESSION1.tipo != inteiro entao ERRO
-    mov ax, ds:[ADDITIVE_EXPRESSION.end]
-    mov bx, ds:[MULTIPLICATIVE_EXPRESSION1.end]
-    add ax, bx
-    ADDITIVE_EXPRESSION.end = NovoTemp()
-    mov ds:[ADDITIVE_EXPRESSION.end], ax
+    operador = guardar o operador ('+' | '-' | 'or') numa variavel
+}
+{3} {
+    se operador = '+' entao {
+        se ADDITIVE_EXPRESSION.tipo != inteiro ou MULTIPLICATIVE_EXPRESSION1.tipo != inteiro entao ERRO
+        mov ax, ds:[ADDITIVE_EXPRESSION.end]
+        mov bx, ds:[MULTIPLICATIVE_EXPRESSION1.end]
+        add ax, bx
+        ADDITIVE_EXPRESSION.end = NovoTemp()
+        mov ds:[ADDITIVE_EXPRESSION.end], ax
+    }
+    senao se operador = '-' entao {
+        se ADDITIVE_EXPRESSION.tipo != inteiro ou MULTIPLICATIVE_EXPRESSION1.tipo != inteiro entao ERRO
+        mov ax, ds:[ADDITIVE_EXPRESSION.end]
+        mov bx, ds:[MULTIPLICATIVE_EXPRESSION1.end]
+        sub ax, bx
+        ADDITIVE_EXPRESSION.end = NovoTemp()
+        mov ds:[ADDITIVE_EXPRESSION.end], ax
+    }
+    senao se operador = 'or' entao {
+        se ADDITIVE_EXPRESSION.tipo != booleano ou MULTIPLICATIVE_EXPRESSION1.tipo != booleano entao ERRO
+        mov al, ds:[ADDITIVE_EXPRESSION.end]
+        or al, ds:[MULTIPLICATIVE_EXPRESSION1.end]
+        MULTIPLICATIVE_EXPRESSION.end = NovoTemp()
+        mov ds:[MULTIPLICATIVE_EXPRESSION.end], al
+    }
 }
 
-<b>ADDITIVE_EXPRESSION -> MULTIPLICATIVE_EXPRESSION {1} {'-' MULTIPLICATIVE_EXPRESSION1 {2}}*</b>
+<b>MULTIPLICATIVE_EXPRESSION -> UNARY_EXPRESSION {1} {('*' | '/' | '%' | 'and') {2} UNARY_EXPRESSION1 {3}}*</b>
 {1} {
-    ADDITIVE_EXPRESSION.tipo = MULTIPLICATIVE_EXPRESSION.tipo
-    ADDITIVE_EXPRESSION.end = MULTIPLICATIVE_EXPRESSION.end
+    MULTIPLICATIVE_EXPRESSION.tipo = UNARY_EXPRESSION.tipo
+    MULTIPLICATIVE_EXPRESSION.end = UNARY_EXPRESSION.end
 }
 {2} {
-    se ADDITIVE_EXPRESSION.tipo != inteiro ou MULTIPLICATIVE_EXPRESSION1.tipo != inteiro entao ERRO
-    mov ax, ds:[ADDITIVE_EXPRESSION.end]
-    mov bx, ds:[MULTIPLICATIVE_EXPRESSION1.end]
-    sub ax, bx
-    ADDITIVE_EXPRESSION.end = NovoTemp()
-    mov ds:[ADDITIVE_EXPRESSION.end], ax
+    operador = guardar o operador ('*' | '/' | '%' | 'and') numa variavel
 }
-
-<b>ADDITIVE_EXPRESSION -> MULTIPLICATIVE_EXPRESSION {1} {'or' MULTIPLICATIVE_EXPRESSION1 {2}}*</b>
-
-<b>MULTIPLICATIVE_EXPRESSION -> UNARY_EXPRESSION {'*' UNARY_EXPRESSION1}*</b>
-<b>MULTIPLICATIVE_EXPRESSION -> UNARY_EXPRESSION {'/' UNARY_EXPRESSION1}*</b>
-<b>MULTIPLICATIVE_EXPRESSION -> UNARY_EXPRESSION {'%' UNARY_EXPRESSION1}*</b>
-<b>MULTIPLICATIVE_EXPRESSION -> UNARY_EXPRESSION {'and' UNARY_EXPRESSION1}*</b>
+{3} {
+    se operador = '*' entao {
+        se MULTIPLICATIVE_EXPRESSION.tipo != inteiro ou UNARY_EXPRESSION1.tipo != inteiro entao ERRO
+        mov ax, ds:[MULTIPLICATIVE_EXPRESSION.end]
+        cwd
+        mov bx, ds:[UNARY_EXPRESSION1.end]
+        imul bx
+        MULTIPLICATIVE_EXPRESSION.end = NovoTemp()
+        mov ds:[MULTIPLICATIVE_EXPRESSION.end], ax
+    }
+    senao se operador = '/' entao {
+        se MULTIPLICATIVE_EXPRESSION.tipo != inteiro ou UNARY_EXPRESSION1.tipo != inteiro entao ERRO
+        mov ax, ds:[MULTIPLICATIVE_EXPRESSION.end]
+        cwd
+        mov bx, ds:[UNARY_EXPRESSION1.end]
+        idiv bx
+        MULTIPLICATIVE_EXPRESSION.end = NovoTemp()
+        mov ds:[MULTIPLICATIVE_EXPRESSION.end], ax
+    }
+    senao se operador = '%' entao {
+        se MULTIPLICATIVE_EXPRESSION.tipo != inteiro ou UNARY_EXPRESSION1.tipo != inteiro entao ERRO
+        mov ax, ds:[MULTIPLICATIVE_EXPRESSION.end]
+        cwd
+        mov bx, ds:[UNARY_EXPRESSION1.end]
+        idiv bx
+        MULTIPLICATIVE_EXPRESSION.end = NovoTemp()
+        mov ds:[MULTIPLICATIVE_EXPRESSION.end], dx
+    }
+    senao se operador = 'and' entao {
+        se MULTIPLICATIVE_EXPRESSION.tipo != booleano ou UNARY_EXPRESSION1.tipo != booleano entao ERRO
+        mov al, ds:[MULTIPLICATIVE_EXPRESSION.end]
+        and al, ds:[UNARY_EXPRESSION1.end]
+        MULTIPLICATIVE_EXPRESSION.end = NovoTemp()
+        mov ds:[MULTIPLICATIVE_EXPRESSION.end], al
+    }
+}
 
 <b>UNARY_EXPRESSION -> 'not' UNARY_EXPRESSION1 {1}</b>
 {1} {
@@ -335,8 +417,7 @@ EXPRESSION ::= RELATIONAL_EXPRESSION
     PRIMARY_EXPRESSION.end = IDENTIFIER.end
 }
 {2} {
-    # PRECISAMOS VER ISSO PQ O NOSSO QUERIDO MAYCÃO BOTOU CHAR[] COMO STRING
-    se PRIMARY_EXPRESSION.tipo = string entao ERRO
+    se EXPRESSION.tipo != inteiro entao ERRO
     PRIMARY_EXPRESSION.end = NovoTemp()
     mov bx, ds:[EXPRESSION.end]
     se PRIMARY_EXPRESSION.tipo = inteiro entao {
@@ -369,3 +450,4 @@ EXPRESSION ::= RELATIONAL_EXPRESSION
 - [8086 assembly interrupt codes](http://www.gabrielececchetti.it/Teaching/CalcolatoriElettronici/Docs/i8086_and_DOS_interrupts.pdf)
 - [8086 assembler directives & macros](https://www.sakshieducation.com/Story.aspx?nid=93723)
 - [8086 addressing modes](https://www.ic.unicamp.br/~celio/mc404s2-03/addr_modes/intel_addr.html)
+- [8086 Logical Instructions](https://microcontrollerslab.com/8086-logical-instructions-assembly-examples/)
