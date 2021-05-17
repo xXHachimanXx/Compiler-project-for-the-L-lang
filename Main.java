@@ -1074,17 +1074,21 @@ class Parser {
     WritelnStatementNode parseWritelnStatement() throws IOException {
         WritelnStatementNode node = new WritelnStatementNode();
         eat(TokenType.LEFT_PAREN);
+
         ExpressionNode expr = parseExpression();
         node.args.add(expr);
         this.codegen.writeExpression(expr.end, this.semantic.getExpressionType(expr));
+
         while (currentToken.type == TokenType.COMMA) {
             eat(TokenType.COMMA);
             expr = parseExpression();
             node.args.add(expr);
             this.codegen.writeExpression(expr.end, this.semantic.getExpressionType(expr));
         }
+
         this.codegen.write(this.codegen.newLineTemp);
         eat(TokenType.RIGHT_PAREN);
+        
         return node;
     }
 
@@ -1163,15 +1167,21 @@ class Parser {
         this.semantic.verifyTypeCompability(identifier, semantic.getExpressionType(node.value));
         this.semantic.verifyClassCompatibility(identifier);
 
-        Symbol identifierSymbol = this.semantic.symTable.getSymbol(identifier);
-        
+        Symbol identifierSymbol = s;
         int idAddr = identifierSymbol.address;
         TokenType idType = identifierSymbol.type;
 
         if(subscriptExpr == null) {
-            this.codegen.doAssignStatement(
-                idAddr, node.value.end, idType
-            );
+            if(s.type == TokenType.STRING) {
+                this.codegen.doStringAssignStatement(
+                    idAddr, node.value.end, idType, s
+                );
+            }
+            else {
+                this.codegen.doAssignStatement(
+                    idAddr, node.value.end, idType
+                );
+            }
         }
         else {
             int idIndexAddr = subscriptExpr.end;
@@ -1800,12 +1810,23 @@ class CodeGenerator {
         return addr;
     }
 
-    public int doAssignStatement(int op1Addr, int op2Addr, TokenType idType) {
+    public int doStringAssignStatement(
+        int idAddr, int exprAddr, TokenType idType, Symbol identifierSymbol
+    ) {
+        int addr = temp;
+        int idSize = identifierSymbol.size;
+
+        addCode(String.format("assignStringVar %d %d %d", idAddr, exprAddr, idSize));
+        
+        return addr+idSize;
+    }
+
+    public int doAssignStatement(int idAddr, int exprAddr, TokenType idType) {
         int addr = temp;
         
-        addCode(String.format("assignVar %d %d", op1Addr, op2Addr));
+        addCode(String.format("assignVar %d %d", idAddr, exprAddr));
         
-        addr = (idType == TokenType.INTEGER)? addr+2 : addr+1;
+        addr = (idType == TokenType.INT)? addr+2 : addr+1;
 
         return addr;
     }
@@ -1830,6 +1851,10 @@ class CodeGenerator {
         addCode(String.format("print %d", addr));
     }
 
+    public void writeStr(int addr, int size) {
+        addCode(String.format("printStr %d %d", addr, size));
+    }
+
     private int charToStr(int addr) {
         int strAddr = createStrTemp("0");
         addCode(String.format("charToStr %d %d", addr, strAddr));
@@ -1850,7 +1875,7 @@ class CodeGenerator {
 
     public void writeExpression(int addr, TokenType type) {
         switch (type) {
-            case STRING: write(addr); break;
+            case STRING: writeStr(addr, 4); break; // Testando imediato
             case CHAR: write(charToStr(addr)); break;
             case BOOLEAN: write(boolToStr(addr)); break;
             case INT: write(intToStr(addr)); break;

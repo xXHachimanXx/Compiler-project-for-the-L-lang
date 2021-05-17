@@ -223,24 +223,49 @@ RotFim:
     mov ds:[tempPtr], ax
 endm
 
-assignVar macro idAddr, valuePtr
-    mov bx, ds:[valuePtr]
+assignVar macro value1Ptr, value2Ptr
+    ; mov ax, ds:[value1Ptr]
+    mov bx, ds:[value2Ptr]
 
-    mov ds:[idAddr], bx
+    mov ds:[value1Ptr], bx
 endm
 
 ; end_id + index * type
-assignArray macro idAddr, valuePtr, idType, idIndexPtr
+assignArray macro value1Ptr, value2Ptr, idType, idIndexPtr
     ; calcular endereco array
     mov ax, idType
     mov cx, ds:[idIndexPtr]
     mul cx
-    add ax, idAddr
+    add ax, value1Ptr
     ; Usar bx para index de ds
     mov bx, ax
     ; mover valor para ds
-    mov ax, ds:[valuePtr]
+    mov ax, ds:[value2Ptr]
     mov ds:[bx], ax
+endm
+
+assignStringVar macro idAddr, exprAddr, idSize
+    LOCAL Again
+
+    ; b = idAddr
+    mov bx, idAddr 
+
+    ; a = idAddr + idSize
+    mov ax, idAddr 
+    add ax, idSize ;
+
+    ; c = exprAddr
+    mov si, OFFSET m1
+
+Again:
+    mov  dl, ds:[si]    ; d = str[c]
+    mov  ds:[bx], dl    ; C[b] = d
+    inc  bx 
+    inc  si           
+    cmp  bx, ax         
+    
+    jne  Again
+
 endm
 
 
@@ -248,6 +273,32 @@ print macro ptr
     mov dx, ptr
     mov ah, 09h
     int 21h
+endm
+
+printStr macro idAddr, idSize
+    LOCAL Again
+
+    mov bx, idAddr ; b = idAddr
+    mov cx, idAddr ; a = idAddr + idSize
+    add cx, idSize ;
+    
+
+Again:
+    mov dx, bx
+    mov ah, 02h
+    int 21h
+    inc  bx                  ;4.
+    cmp  dx, cx             ;5.
+    jne  Again
+
+    ; for(b = idAddr; b < a; b++, c++) print(b)
+; R1:
+;     cmp bx, ax
+;     jge R2
+;     print bx
+;     add ax, 1
+;     jmp R1
+; R2: 
 endm
 
 appendDollarToStr macro
@@ -325,10 +376,8 @@ endm
 data segment
     db 4000h DUP(64)
     db 13, 10, '$'
-    c dw 5 DUP(?)
-    db "-00000", '$'
-    db " ", '$'
-    db "-00000", '$'
+    c db 4 DUP(?)
+    db "12345678", '$'
 data ends
 
 ; --------------- CODE
@@ -339,24 +388,9 @@ start:
     MOV AX, data
     MOV DS, AX
 
-    createIntTemp 5, 0
-    createIntTemp 0, 2
-    createIntTemp 20, 4
-    createIntTemp 20, 6
-    sum 4 6 8
-    assignArray 16387 8 2 2
-    createIntTemp 1, 10
-    createIntTemp 1, 12
-    assignArray 16387 12 2 10
-    createIntTemp 0, 14
-    getIntArrayElement 16387, 14, 16
-    intToStr 16 16397
-    print 16397
-    print 16404
-    createIntTemp 1, 18
-    getIntArrayElement 16387, 18, 20
-    intToStr 20 16406
-    print 16406
+    createIntTemp 4, 0
+    assignStringVar 16387 16392 4
+    printStr 16387 4
     print 16384
 
     MOV AH, 4CH ; Exit
