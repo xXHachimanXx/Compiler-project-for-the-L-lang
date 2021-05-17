@@ -1172,9 +1172,9 @@ class Parser {
         TokenType idType = identifierSymbol.type;
 
         if(subscriptExpr == null) {
-            if(identifierSymbol.type == TokenType.CHAR) {
+            if(s.type == TokenType.STRING) {
                 this.codegen.doStringAssignStatement(
-                    idAddr, node.value.end, idType, identifierSymbol
+                    idAddr, node.value.end, idType, s
                 );
             }
             else {
@@ -1818,17 +1818,13 @@ class CodeGenerator {
 
         addCode(String.format("assignStringVar %d %d %d", idAddr, exprAddr, idSize));
         
-        return addr;
+        return addr+idSize;
     }
 
     public int doAssignStatement(int idAddr, int exprAddr, TokenType idType) {
         int addr = temp;
         
-        if(idType == TokenType.CHAR) 
-            addCode(String.format("assignStringVar %d %d", idAddr, exprAddr));
-        else
-            addCode(String.format("assignVar %d %d", idAddr, exprAddr));
-
+        addCode(String.format("assignVar %d %d", idAddr, exprAddr));
         
         addr = (idType == TokenType.INTEGER)? addr+2 : addr+1;
 

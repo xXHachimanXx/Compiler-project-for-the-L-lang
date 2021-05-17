@@ -245,24 +245,26 @@ assignArray macro value1Ptr, value2Ptr, idType, idIndexPtr
 endm
 
 assignStringVar macro idAddr, exprAddr, idSize
-    LOCAL R1, R2
+    LOCAL Again
 
-    mov bx, idAddr ; b = idAddr
-    mov cx, exprAddr ; c = exprAddr
+    ; b = idAddr
+    mov bx, idAddr 
 
-    mov ax, idAddr ; a = idAddr + idSize
+    ; a = idAddr + idSize
+    mov ax, idAddr 
     add ax, idSize ;
 
-    ; for(b = idAddr; b < a; b++, c++) ds[b] = ds[c]
-R1:
-    cmp bx, ax
-    jge R2
-    mov dx, ds[cx]
-    mov ds:[bx], dx
-    add ax, 1
-    add cx, 1
-    jmp R1
-R2: 
+    ; c = exprAddr
+    mov cx, exprAddr
+
+Again:
+    mov  dl, ds:[cx]    ; d = str[c]
+    mov  ds:[bx], dl    ; C[b] = d
+    inc  bx 
+    inc  cx            
+    cmp  bx, ax         
+    
+    jne  Again
 
 endm
 
@@ -274,20 +276,29 @@ print macro ptr
 endm
 
 printStr macro idAddr, idSize
-    LOCAL R1, R2
+    LOCAL Again
 
     mov bx, idAddr ; b = idAddr
-    mov ax, idAddr ; a = idAddr + idSize
-    add ax, idSize ;
+    mov cx, idAddr ; a = idAddr + idSize
+    add cx, idSize ;
+    
+
+Again:
+    mov dx, bx
+    mov ah, 02h
+    int 21h
+    inc  bx                  ;4.
+    cmp  dx, cx             ;5.
+    jne  Again
 
     ; for(b = idAddr; b < a; b++, c++) print(b)
-R1:
-    cmp bx, ax
-    jge R2
-    print bx
-    add ax, 1
-    jmp R1
-R2: 
+; R1:
+;     cmp bx, ax
+;     jge R2
+;     print bx
+;     add ax, 1
+;     jmp R1
+; R2: 
 endm
 
 appendDollarToStr macro
