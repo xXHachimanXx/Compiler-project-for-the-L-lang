@@ -825,6 +825,12 @@ class Parser {
                     eat(TokenType.LEFT_BRACKET);
                     subscriptExpr = parseExpression();
                     eat(TokenType.RIGHT_BRACKET);
+                }else{
+                    Symbol s = this.semantic.getDeclaredSymbol(identifier);
+
+                    if(s.size > 0){
+                        SemanticErros.incompatibleTypes(lexer.line);
+                    }
                 }
 
                 if (subscriptExpr == null) {
@@ -944,13 +950,6 @@ class Parser {
                         || currentToken.type == TokenType.SMALLER_OR_EQUAL
                         || currentToken.type == TokenType.GREATER_OR_EQUAL
         ) {
-            if(node instanceof IdentifierExpressionNode){
-                //Semantic Action
-                if(ParserUtils.isVet(semantic.getDeclaredSymbol(((IdentifierExpressionNode) node).identifier))){
-                    SemanticErros.incompatibleTypes(lexer.line);
-                }
-            }
-
             String operator = currentToken.value;
             eat();
 

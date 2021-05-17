@@ -2,7 +2,9 @@
 <project version="4">
   <component name="ChangeListManager">
     <list default="true" id="d5ae3349-d451-49e4-9bfc-c5ca012f8f9c" name="Default Changelist" comment="verificando unicidade">
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/Main.java" beforeDir="false" afterPath="$PROJECT_DIR$/Main.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/test/exemplo3.l" beforeDir="false" afterPath="$PROJECT_DIR$/test/exemplo3.l" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -94,12 +96,12 @@
       <breakpoints>
         <line-breakpoint type="java-line">
           <url>file://$PROJECT_DIR$/Main.java</url>
-          <line>1043</line>
+          <line>1042</line>
           <option name="timeStamp" value="233" />
         </line-breakpoint>
         <line-breakpoint type="java-line">
           <url>file://$PROJECT_DIR$/Main.java</url>
-          <line>1029</line>
+          <line>1028</line>
           <option name="timeStamp" value="235" />
         </line-breakpoint>
         <line-breakpoint type="java-line">
@@ -109,27 +111,22 @@
         </line-breakpoint>
         <line-breakpoint type="java-line">
           <url>file://$PROJECT_DIR$/Main.java</url>
-          <line>953</line>
-          <option name="timeStamp" value="256" />
-        </line-breakpoint>
-        <line-breakpoint type="java-line">
-          <url>file://$PROJECT_DIR$/Main.java</url>
-          <line>1442</line>
+          <line>1471</line>
           <option name="timeStamp" value="257" />
         </line-breakpoint>
         <line-breakpoint type="java-line">
           <url>file://$PROJECT_DIR$/Main.java</url>
-          <line>1474</line>
+          <line>1503</line>
           <option name="timeStamp" value="258" />
         </line-breakpoint>
         <line-breakpoint type="java-line">
           <url>file://$PROJECT_DIR$/Main.java</url>
-          <line>1157</line>
+          <line>1161</line>
           <option name="timeStamp" value="266" />
         </line-breakpoint>
         <line-breakpoint type="java-line">
           <url>file://$PROJECT_DIR$/Main.java</url>
-          <line>1108</line>
+          <line>1111</line>
           <option name="timeStamp" value="268" />
         </line-breakpoint>
       </breakpoints>
