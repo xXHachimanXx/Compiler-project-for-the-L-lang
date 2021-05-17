@@ -32,6 +32,8 @@ If you wanna **debug** the .exe file, you can simple run `debug simple.exe`, the
 
 ## Language Grammar
 
+This grammar can be loaded on https://www.bottlecaps.de/rr/ui.
+
 ```
 PROGRAM ::= ((VAR_DECLS | CONST_DECLS) ';')* 'main' '{' TERMINATED_STATEMENT* '}'
 
