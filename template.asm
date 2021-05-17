@@ -244,6 +244,28 @@ assignArray macro value1Ptr, value2Ptr, idType, idIndexPtr
     mov ds:[bx], ax
 endm
 
+assignStringVar macro idAddr, exprAddr, idSize
+    LOCAL R1, R2
+
+    mov bx, idAddr ; b = idAddr
+    mov cx, exprAddr ; c = exprAddr
+
+    mov ax, idAddr ; a = idAddr + idSize
+    add ax, idSize ;
+
+    ; for(b = idAddr; b < a; b++, c++) ds[b] = ds[c]
+R1:
+    cmp bx, ax
+    jge R2
+    mov dx, ds[cx]
+    mov ds:[bx], dx
+    add ax, 1
+    add cx, 1
+    jmp R1
+R2: 
+
+endm
+
 
 print macro ptr
     mov dx, ptr

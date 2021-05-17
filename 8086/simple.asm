@@ -223,23 +223,24 @@ RotFim:
     mov ds:[tempPtr], ax
 endm
 
-assignVar macro idAddr, valuePtr
-    mov bx, ds:[valuePtr]
+assignVar macro value1Ptr, value2Ptr
+    ; mov ax, ds:[value1Ptr]
+    mov bx, ds:[value2Ptr]
 
-    mov ds:[idAddr], bx
+    mov ds:[value1Ptr], bx
 endm
 
 ; end_id + index * type
-assignArray macro idAddr, valuePtr, idType, idIndexPtr
+assignArray macro value1Ptr, value2Ptr, idType, idIndexPtr
     ; calcular endereco array
     mov ax, idType
     mov cx, ds:[idIndexPtr]
     mul cx
-    add ax, idAddr
+    add ax, value1Ptr
     ; Usar bx para index de ds
     mov bx, ax
     ; mover valor para ds
-    mov ax, ds:[valuePtr]
+    mov ax, ds:[value2Ptr]
     mov ds:[bx], ax
 endm
 
@@ -325,10 +326,8 @@ endm
 data segment
     db 4000h DUP(64)
     db 13, 10, '$'
-    c dw 5 DUP(?)
-    db "-00000", '$'
-    db " ", '$'
-    db "-00000", '$'
+    c db 5 DUP(?)
+    db "paooooooo", '$'
 data ends
 
 ; --------------- CODE
@@ -340,23 +339,8 @@ start:
     MOV DS, AX
 
     createIntTemp 5, 0
-    createIntTemp 0, 2
-    createIntTemp 20, 4
-    createIntTemp 20, 6
-    sum 4 6 8
-    assignArray 16387 8 2 2
-    createIntTemp 1, 10
-    createIntTemp 1, 12
-    assignArray 16387 12 2 10
-    createIntTemp 0, 14
-    getIntArrayElement 16387, 14, 16
-    intToStr 16 16397
-    print 16397
-    print 16404
-    createIntTemp 1, 18
-    getIntArrayElement 16387, 18, 20
-    intToStr 20 16406
-    print 16406
+    assignVar 16387 16393
+    print 16387
     print 16384
 
     MOV AH, 4CH ; Exit

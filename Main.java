@@ -1074,17 +1074,21 @@ class Parser {
     WritelnStatementNode parseWritelnStatement() throws IOException {
         WritelnStatementNode node = new WritelnStatementNode();
         eat(TokenType.LEFT_PAREN);
+
         ExpressionNode expr = parseExpression();
         node.args.add(expr);
         this.codegen.writeExpression(expr.end, this.semantic.getExpressionType(expr));
+
         while (currentToken.type == TokenType.COMMA) {
             eat(TokenType.COMMA);
             expr = parseExpression();
             node.args.add(expr);
             this.codegen.writeExpression(expr.end, this.semantic.getExpressionType(expr));
         }
+
         this.codegen.write(this.codegen.newLineTemp);
         eat(TokenType.RIGHT_PAREN);
+        
         return node;
     }
 
@@ -1163,15 +1167,21 @@ class Parser {
         this.semantic.verifyTypeCompability(identifier, semantic.getExpressionType(node.value));
         this.semantic.verifyClassCompatibility(identifier);
 
-        Symbol identifierSymbol = this.semantic.symTable.getSymbol(identifier);
-        
+        Symbol identifierSymbol = s;
         int idAddr = identifierSymbol.address;
         TokenType idType = identifierSymbol.type;
 
         if(subscriptExpr == null) {
-            this.codegen.doAssignStatement(
-                idAddr, node.value.end, idType
-            );
+            if(identifierSymbol.type == TokenType.CHAR) {
+                this.codegen.doStringAssignStatement(
+                    idAddr, node.value.end, idType, identifierSymbol
+                );
+            }
+            else {
+                this.codegen.doAssignStatement(
+                    idAddr, node.value.end, idType
+                );
+            }
         }
         else {
             int idIndexAddr = subscriptExpr.end;
@@ -1800,10 +1810,25 @@ class CodeGenerator {
         return addr;
     }
 
-    public int doAssignStatement(int op1Addr, int op2Addr, TokenType idType) {
+    public int doStringAssignStatement(
+        int idAddr, int exprAddr, TokenType idType, Symbol identifierSymbol
+    ) {
+        int addr = temp;
+        int idSize = identifierSymbol.size;
+
+        addCode(String.format("assignStringVar %d %d %d", idAddr, exprAddr, idSize));
+        
+        return addr;
+    }
+
+    public int doAssignStatement(int idAddr, int exprAddr, TokenType idType) {
         int addr = temp;
         
-        addCode(String.format("assignVar %d %d", op1Addr, op2Addr));
+        if(idType == TokenType.CHAR) 
+            addCode(String.format("assignStringVar %d %d", idAddr, exprAddr));
+        else
+            addCode(String.format("assignVar %d %d", idAddr, exprAddr));
+
         
         addr = (idType == TokenType.INTEGER)? addr+2 : addr+1;
 
