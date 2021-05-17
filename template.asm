@@ -273,6 +273,23 @@ print macro ptr
     int 21h
 endm
 
+printStr macro idAddr, idSize
+    LOCAL R1, R2
+
+    mov bx, idAddr ; b = idAddr
+    mov ax, idAddr ; a = idAddr + idSize
+    add ax, idSize ;
+
+    ; for(b = idAddr; b < a; b++, c++) print(b)
+R1:
+    cmp bx, ax
+    jge R2
+    print bx
+    add ax, 1
+    jmp R1
+R2: 
+endm
+
 appendDollarToStr macro
     mov dx, '$' ;coloca '$'
     mov ds:[di],dl ;escreve caractere

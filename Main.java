@@ -1855,6 +1855,10 @@ class CodeGenerator {
         addCode(String.format("print %d", addr));
     }
 
+    public void writeStr(int addr, int size) {
+        addCode(String.format("printStr %d %d", addr, size));
+    }
+
     private int charToStr(int addr) {
         int strAddr = createStrTemp("0");
         addCode(String.format("charToStr %d %d", addr, strAddr));
@@ -1875,7 +1879,7 @@ class CodeGenerator {
 
     public void writeExpression(int addr, TokenType type) {
         switch (type) {
-            case STRING: write(addr); break;
+            case STRING: writeStr(addr, 4); break; // Testando imediato
             case CHAR: write(charToStr(addr)); break;
             case BOOLEAN: write(boolToStr(addr)); break;
             case INT: write(intToStr(addr)); break;
