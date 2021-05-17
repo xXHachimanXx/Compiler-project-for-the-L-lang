@@ -1574,7 +1574,7 @@ class SemanticErros{
     }
 
     public static void changeConst(String symbolName, int line){
-        System.out.println(String.format("%d\nclasse de identificador incompatível [%s].", line, symbolName));
+        System.out.println(String.format("%d\nclasse de identificador incompativel [%s].", line, symbolName));
         System.exit(0);
     }
 
