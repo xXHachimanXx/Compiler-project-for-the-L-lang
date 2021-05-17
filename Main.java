@@ -1826,7 +1826,7 @@ class CodeGenerator {
         
         addCode(String.format("assignVar %d %d", idAddr, exprAddr));
         
-        addr = (idType == TokenType.INTEGER)? addr+2 : addr+1;
+        addr = (idType == TokenType.INT)? addr+2 : addr+1;
 
         return addr;
     }
