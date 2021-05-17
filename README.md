@@ -32,6 +32,8 @@ If you wanna **debug** the .exe file, you can simple run `debug simple.exe`, the
 
 ## Language Grammar
 
+This grammar can be loaded on https://www.bottlecaps.de/rr/ui.
+
 ```
 PROGRAM ::= ((VAR_DECLS | CONST_DECLS) ';')* 'main' '{' TERMINATED_STATEMENT* '}'
 
@@ -106,6 +108,245 @@ RELATIONAL_EXPRESSION ::= ADDITIVE_EXPRESSION (('=' | '<>' | '<' | '>' | '<=' | 
 
 EXPRESSION ::= RELATIONAL_EXPRESSION
 ```
+
+## Language Grammar with Translation Scheme using professor's notation
+
+<pre>
+<b>PROGRAM -> { [VAR_DECLS | CONST_DECLS] ';' }* 'main' '{' {TERMINATED_STATEMENT}* '}'</b>
+
+<b>CONST_DECLS -> 'final' CONST_DECL {',' CONST_DECL}*</b>
+
+<b>CONST_DECL -> IDENTIFIER {1} '=' CONST {2}</b>
+{1} {
+    se JA_DECLARADO(IDENTIFIER.lex) entao ERRO
+}
+{2} {
+    IDENTIFIER.tipo = CONST.tipo
+    se IDENTIFIER.tipo = inteiro entao {
+        dw CONST.lex
+    } senao se IDENTIFIER.tipo = caractere entao {
+        db ((int) CONST.lex)
+    } senao se IDENTIFIER.tipo = booleano entao {
+        se CONST.lex = TRUE entao {
+            db 1
+        } senao {
+            db 0
+        }
+    }
+}
+
+<b>VAR_DECLS -> 'int' {1} VAR_DECL {',' {2} VAR_DECL1}*</b>
+{1} {
+    VAR_DECL.tipo = inteiro # passa o tipo por parâmetro para VAR_DECL
+}
+{2} {
+    VAR_DECL1.tipo = inteiro # passa o tipo por parâmetro para VAR_DECL1
+}
+
+<b>VAR_DECLS -> 'char' {1} VAR_DECL {',' {2} VAR_DECL1}*</b>
+{1} {
+    VAR_DECL.tipo = caractere # passa o tipo por parâmetro para VAR_DECL
+}
+{2} {
+    VAR_DECL1.tipo = caractere # passa o tipo por parâmetro para VAR_DECL1
+}
+
+<b>VAR_DECLS -> 'boolean' {1} VAR_DECL {',' {2} VAR_DECL1}*</b>
+{1} {
+    VAR_DECL.tipo = booleano # passa o tipo por parâmetro para VAR_DECL
+}
+{2} {
+    VAR_DECL1.tipo = booleano # passa o tipo por parâmetro para VAR_DECL1
+}
+
+<b>VAR_DECL -> IDENTIFIER {1}</b>
+{1} {
+    se JA_DECLARADO(IDENTIFIER.lex) entao ERRO
+    IDENTIFIER.tipo = VAR_DECL.tipo
+    se IDENTIFIER.tipo = inteiro entao {
+        dw 0 # declare word
+    } senao se IDENTIFIER.tipo = caractere entao {
+        db 0 # declare byte
+    } senao se IDENTIFIER.tipo = booleano entao {
+        db 0
+    }
+}
+
+<b>VAR_DECL -> IDENTIFIER {1} ':=' CONST {2}</b>
+{1} {
+    se JA_DECLARADO(IDENTIFIER.lex) entao ERRO
+    IDENTIFIER.tipo = VAR_DECL.tipo
+}
+{2} {
+    se IDENTIFIER.tipo != CONST.tipo entao ERRO
+    se IDENTIFIER.tipo = inteiro entao {
+        dw CONST.lex
+    } senao se IDENTIFIER.tipo = caractere entao {
+        db ((int) CONST.lex)
+    } senao se IDENTIFIER.tipo = booleano entao {
+        se CONST.lex = TRUE entao {
+            db 1
+        } senao {
+            db 0
+        }
+    }
+}
+
+<b>VAR_DECL -> IDENTIFIER {1} '[' CONST {2} ']'</b>
+{1} {
+    se JA_DECLARADO(IDENTIFIER.lex) entao ERRO
+    IDENTIFIER.tipo = VAR_DECL.tipo
+}
+{2} {
+    se CONST.tipo != inteiro entao ERRO
+    se IDENTIFIER.tipo = inteiro entao {
+        dw CONST.lex DUP(?)
+    } senao {
+        db CONST.lex DUP(?)
+    }
+}
+
+<b>TERMINATED_STATEMENT -> WRITE_STATEMENT ';'</b>
+<b>TERMINATED_STATEMENT -> WRITELN_STATEMENT ';'</b>
+<b>TERMINATED_STATEMENT -> READLN_STATEMENT ';'</b>
+<b>TERMINATED_STATEMENT -> IF_STATEMENT</b>
+<b>TERMINATED_STATEMENT -> FOR_STATEMENT</b>
+<b>TERMINATED_STATEMENT -> ASSIGN_STATEMENT ';'</b>
+
+<b>WRITE_STATEMENT -> 'write' '(' EXPRESSION {',' EXPRESSION1}* ')'</b>
+
+<b>WRITELN_STATEMENT -> 'writeln' '(' EXPRESSION {',' EXPRESSION1}* ')'</b>
+
+<b>READLN_STATEMENT -> 'readln' '(' IDENTIFIER [ '[' EXPRESSION ']' ] ')'</b>
+
+<b>IF_STATEMENT -> 'if' '(' EXPRESSION ')' 'then' STATEMENT_OR_STATEMENTS [ 'else' STATEMENT_OR_STATEMENTS ]</b>
+
+<b>FOR_STATEMENT -> 'for' '(' [COMMA_SEPARATED_STATEMENTS] ';' EXPRESSION ';' [COMMA_SEPARATED_STATEMENTS] ')STATEMENT_OR_STATEMENTS</b>
+
+<b>ASSIGN_STATEMENT -> IDENTIFIER [ '[' EXPRESSION ']' ] ':=' EXPRESSION1</b>
+
+<b>STATEMENT_OR_STATEMENTS -> TERMINATED_STATEMENT</b>
+<b>STATEMENT_OR_STATEMENTS -> '{' {TERMINATED_STATEMENT}* '}'</b>
+
+<b>COMMA_SEPARATED_STATEMENTS -> STATEMENT {',' STATEMENT}*</b>
+
+<b>STATEMENT -> WRITE_STATEMENT</b>
+<b>STATEMENT -> WRITELN_STATEMENT</b>
+<b>STATEMENT -> READLN_STATEMENT</b>
+<b>STATEMENT -> IF_STATEMENT</b>
+<b>STATEMENT -> FOR_STATEMENT</b>
+<b>STATEMENT -> ASSIGN_STATEMENT</b>
+
+<b>EXPRESSION -> RELATIONAL_EXPRESSION</b>
+
+<b>RELATIONAL_EXPRESSION -> ADDITIVE_EXPRESSION {'=' ADDITIVE_EXPRESSION1}*</b>
+<b>RELATIONAL_EXPRESSION -> ADDITIVE_EXPRESSION {'<>' ADDITIVE_EXPRESSION1}*</b>
+<b>RELATIONAL_EXPRESSION -> ADDITIVE_EXPRESSION {'<' ADDITIVE_EXPRESSION1}*</b>
+<b>RELATIONAL_EXPRESSION -> ADDITIVE_EXPRESSION {'>' ADDITIVE_EXPRESSION1}*</b>
+<b>RELATIONAL_EXPRESSION -> ADDITIVE_EXPRESSION {'<=' ADDITIVE_EXPRESSION1}*</b>
+<b>RELATIONAL_EXPRESSION -> ADDITIVE_EXPRESSION {'>=' ADDITIVE_EXPRESSION1}*</b>
+
+<b>ADDITIVE_EXPRESSION -> MULTIPLICATIVE_EXPRESSION {1} {'+' MULTIPLICATIVE_EXPRESSION1 {2}}*</b>
+{1} {
+    ADDITIVE_EXPRESSION.tipo = MULTIPLICATIVE_EXPRESSION.tipo
+    ADDITIVE_EXPRESSION.end = MULTIPLICATIVE_EXPRESSION.end
+}
+{2} {
+    se ADDITIVE_EXPRESSION.tipo != inteiro ou MULTIPLICATIVE_EXPRESSION1.tipo != inteiro entao ERRO
+    mov ax, ds:[ADDITIVE_EXPRESSION.end]
+    mov bx, ds:[MULTIPLICATIVE_EXPRESSION1.end]
+    add ax, bx
+    ADDITIVE_EXPRESSION.end = NovoTemp()
+    mov ds:[ADDITIVE_EXPRESSION.end], ax
+}
+
+<b>ADDITIVE_EXPRESSION -> MULTIPLICATIVE_EXPRESSION {1} {'-' MULTIPLICATIVE_EXPRESSION1 {2}}*</b>
+{1} {
+    ADDITIVE_EXPRESSION.tipo = MULTIPLICATIVE_EXPRESSION.tipo
+    ADDITIVE_EXPRESSION.end = MULTIPLICATIVE_EXPRESSION.end
+}
+{2} {
+    se ADDITIVE_EXPRESSION.tipo != inteiro ou MULTIPLICATIVE_EXPRESSION1.tipo != inteiro entao ERRO
+    mov ax, ds:[ADDITIVE_EXPRESSION.end]
+    mov bx, ds:[MULTIPLICATIVE_EXPRESSION1.end]
+    sub ax, bx
+    ADDITIVE_EXPRESSION.end = NovoTemp()
+    mov ds:[ADDITIVE_EXPRESSION.end], ax
+}
+
+<b>ADDITIVE_EXPRESSION -> MULTIPLICATIVE_EXPRESSION {1} {'or' MULTIPLICATIVE_EXPRESSION1 {2}}*</b>
+
+<b>MULTIPLICATIVE_EXPRESSION -> UNARY_EXPRESSION {'*' UNARY_EXPRESSION1}*</b>
+<b>MULTIPLICATIVE_EXPRESSION -> UNARY_EXPRESSION {'/' UNARY_EXPRESSION1}*</b>
+<b>MULTIPLICATIVE_EXPRESSION -> UNARY_EXPRESSION {'%' UNARY_EXPRESSION1}*</b>
+<b>MULTIPLICATIVE_EXPRESSION -> UNARY_EXPRESSION {'and' UNARY_EXPRESSION1}*</b>
+
+<b>UNARY_EXPRESSION -> 'not' UNARY_EXPRESSION1 {1}</b>
+{1} {
+    se UNARY_EXPRESSION1.tipo != booleano entao ERRO
+    UNARY_EXPRESSION.tipo = UNARY_EXPRESSION1.tipo
+    UNARY_EXPRESSION.end = NovoTemp()
+    mov ax, ds:[UNARY_EXPRESSION1.end]
+    neg ax
+    add ax, 1
+    mov ds:[UNARY_EXPRESSION.end], al
+}
+
+<b>UNARY_EXPRESSION -> '+' UNARY_EXPRESSION1 {1}</b>
+{1} {
+    se UNARY_EXPRESSION1.tipo != inteiro entao ERRO
+    UNARY_EXPRESSION.tipo = UNARY_EXPRESSION1.tipo
+    UNARY_EXPRESSION.end = UNARY_EXPRESSION1.end
+}
+
+<b>UNARY_EXPRESSION -> '-' UNARY_EXPRESSION1 {1}</b>
+{1} {
+    se UNARY_EXPRESSION1.tipo != inteiro entao ERRO
+    UNARY_EXPRESSION.tipo = UNARY_EXPRESSION1.tipo
+    UNARY_EXPRESSION.end = NovoTemp()
+    mov ax, ds:[UNARY_EXPRESSION1.end]
+    neg ax
+    mov ds:[UNARY_EXPRESSION.end], ax
+}
+
+<b>UNARY_EXPRESSION -> PRIMARY_EXPRESSION {1}</b>
+{1} {
+    UNARY_EXPRESSION.tipo = PRIMARY_EXPRESSION.tipo
+    UNARY_EXPRESSION.end = PRIMARY_EXPRESSION.end
+}
+
+<b>PRIMARY_EXPRESSION -> CONST {1}</b>
+{1} {
+    PRIMARY_EXPRESSION.tipo = CONST.tipo
+    PRIMARY_EXPRESSION.end = NovoTemp()
+    mov ax, CONST.lex
+    mov DS:[PRIMARY_EXPRESSION.end], ax
+}
+
+<b>PRIMARY_EXPRESSION -> '(' EXPRESSION {1} ')'</b>
+{1} {
+    PRIMARY_EXPRESSION.tipo = EXPRESSION.tipo
+    PRIMARY_EXPRESSION.end = EXPRESSION.end
+}
+
+<b>PRIMARY_EXPRESSION -> IDENTIFIER {1} [ '[' EXPRESSION {2} ']' ]</b>
+{1} {
+    PRIMARY_EXPRESSION.tipo = IDENTIFIER.tipo
+    PRIMARY_EXPRESSION.end = IDENTIFIER.end
+}
+{2} {
+    # PRECISAMOS VER ISSO PQ O NOSSO QUERIDO MAYCÃO BOTOU CHAR[] COMO STRING
+    se PRIMARY_EXPRESSION.tipo = string entao ERRO
+    PRIMARY_EXPRESSION.end = NovoTemp()
+    mov bx, ds:[EXPRESSION.end]
+    se PRIMARY_EXPRESSION.tipo = inteiro entao {
+        add bx, bx
+    }
+    add bx, IDENTIFIER.end
+    mov bx, ds:[bx]
+    mov ds:[PRIMARY_EXPRESSION.end], bx
+}
+</pre>
 
 ## References
 
