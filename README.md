@@ -216,11 +216,445 @@ EXPRESSION ::= RELATIONAL_EXPRESSION
 <b>TERMINATED_STATEMENT -> FOR_STATEMENT</b>
 <b>TERMINATED_STATEMENT -> ASSIGN_STATEMENT ';'</b>
 
-<b>WRITE_STATEMENT -> 'write' '(' EXPRESSION {',' EXPRESSION1}* ')'</b>
+<b>WRITE_STATEMENT -> 'write' '(' EXPRESSION {1} {',' EXPRESSION1 {2}}* ')'</b>
+{1} {
+    se EXPRESSION.tipo = inteiro entao {
+        db "-00000", '$'
+        mov ax, ds:[EXPRESSION.end] ; Traz o inteiro para ax
+        mov di, contador_global_endereco
+        contador_global_endereco += 7
+        mov cx, 0 ;contador
+        cmp ax,0 ;verifica sinal
+        R0 := NovoRot
+        jge R0 ;salta se número positivo
 
-<b>WRITELN_STATEMENT -> 'writeln' '(' EXPRESSION {',' EXPRESSION1}* ')'</b>
+        mov bl, 2Dh ;senão, escreve sinal -
+        mov ds:[di], bl
+        add di, 1 ;incrementa índice
+        neg ax ;toma módulo do número
 
-<b>READLN_STATEMENT -> 'readln' '(' IDENTIFIER [ '[' EXPRESSION ']' ] ')'</b>
+        R0:
+            mov bx, 10 ;divisor
+        R1 := NovoRot
+        R1:
+            add cx, 1 ;incrementa contador
+            mov dx, 0 ;estende 32bits p/ div.
+            idiv bx ;divide DXAX por BX
+            push dx ;empilha valor do resto
+            cmp ax, 0 ;verifica se quoc. é 0
+            jne R1 ;se não é 0, continua
+
+        R2 := NovoRot
+        ;agora, desemp. os valores e escreve o string
+        R2:
+            pop dx ;desempilha valor
+            add dx, 30h ;transforma em caractere
+            mov ds:[di],dl ;escreve caractere
+            add di, 1 ;incrementa base
+            add cx, -1 ;decrementa contador
+            cmp cx, 0 ;verifica pilha vazia
+            jne R2 ;se não pilha vazia, loop
+
+            mov dx, '$' ;coloca '$'
+            mov ds:[di],dl ;escreve caractere
+            add di, 1 ;incrementa base
+    }
+    senao se EXPRESSION.tipo = caractere entao {
+        db "0", '$'
+
+        mov al, ds:[EXPRESSION.end] ; Traz o caractere para al
+        mov ds:[contador_global_endereco], al ; Coloca na string
+        contador_global_endereco += 2
+    }
+    senao se EXPRESSION.tipo = booleano entao {
+        db "0", '$'
+
+        mov al, ds:[EXPRESSION.end] ; Traz o booleano da memória
+        mov ah, 0 ; Limpa possível lixo em AH
+        cmp ax, 0 ; Compara o valor booleano com 0
+        R0 := NovoRot
+        je R0
+
+        mov al, '1' ; Se nao for igual a 0
+        R1 := NovoRot
+        jmp R1
+
+        R0: ; Se for igual a 0
+            mov al, '0'
+
+        R1: ; Se for igual a 1
+            mov ds:[contador_global_endereco], al ; Coloca na string
+            contador_global_endereco += 2
+    }
+    senao se EXPRESSION.tipo = string entao {
+        mov dx, EXPRESSION.end
+        mov ah, 09h
+        int 21h
+    }
+}
+{2} {
+    se EXPRESSION1.tipo = inteiro entao {
+        db "-00000", '$'
+        mov ax, ds:[EXPRESSION1.end] ; Traz o inteiro para ax
+        mov di, contador_global_endereco
+        contador_global_endereco += 7
+        mov cx, 0 ;contador
+        cmp ax,0 ;verifica sinal
+        R0 := NovoRot
+        jge R0 ;salta se número positivo
+
+        mov bl, 2Dh ;senão, escreve sinal -
+        mov ds:[di], bl
+        add di, 1 ;incrementa índice
+        neg ax ;toma módulo do número
+
+        R0:
+            mov bx, 10 ;divisor
+        R1 := NovoRot
+        R1:
+            add cx, 1 ;incrementa contador
+            mov dx, 0 ;estende 32bits p/ div.
+            idiv bx ;divide DXAX por BX
+            push dx ;empilha valor do resto
+            cmp ax, 0 ;verifica se quoc. é 0
+            jne R1 ;se não é 0, continua
+
+        R2 := NovoRot
+        ;agora, desemp. os valores e escreve o string
+        R2:
+            pop dx ;desempilha valor
+            add dx, 30h ;transforma em caractere
+            mov ds:[di],dl ;escreve caractere
+            add di, 1 ;incrementa base
+            add cx, -1 ;decrementa contador
+            cmp cx, 0 ;verifica pilha vazia
+            jne R2 ;se não pilha vazia, loop
+
+            mov dx, '$' ;coloca '$'
+            mov ds:[di],dl ;escreve caractere
+            add di, 1 ;incrementa base
+    }
+    senao se EXPRESSION1.tipo = caractere entao {
+        db "0", '$'
+
+        mov al, ds:[EXPRESSION1.end] ; Traz o caractere para al
+        mov ds:[contador_global_endereco], al ; Coloca na string
+        contador_global_endereco += 2
+    }
+    senao se EXPRESSION1.tipo = booleano entao {
+        db "0", '$'
+
+        mov al, ds:[EXPRESSION1.end] ; Traz o booleano da memória
+        mov ah, 0 ; Limpa possível lixo em AH
+        cmp ax, 0 ; Compara o valor booleano com 0
+        R0 := NovoRot
+        je R0
+
+        mov al, '1' ; Se nao for igual a 0
+        R1 := NovoRot
+        jmp R1
+
+        R0: ; Se for igual a 0
+            mov al, '0'
+
+        R1: ; Se for igual a 1
+            mov ds:[contador_global_endereco], al ; Coloca na string
+            contador_global_endereco += 2
+    }
+    senao se EXPRESSION1.tipo = string entao {
+        mov dx, EXPRESSION1.end
+        mov ah, 09h
+        int 21h
+    }
+}
+
+<b>WRITELN_STATEMENT -> 'writeln' '(' EXPRESSION {1} {',' EXPRESSION1 {2}}* ')' {3}</b>
+{1} {
+    se EXPRESSION.tipo = inteiro entao {
+        db "-00000", '$'
+        mov ax, ds:[EXPRESSION.end] ; Traz o inteiro para ax
+        mov di, contador_global_endereco
+        contador_global_endereco += 7
+        mov cx, 0 ;contador
+        cmp ax,0 ;verifica sinal
+        R0 := NovoRot
+        jge R0 ;salta se número positivo
+
+        mov bl, 2Dh ;senão, escreve sinal -
+        mov ds:[di], bl
+        add di, 1 ;incrementa índice
+        neg ax ;toma módulo do número
+
+        R0:
+            mov bx, 10 ;divisor
+        R1 := NovoRot
+        R1:
+            add cx, 1 ;incrementa contador
+            mov dx, 0 ;estende 32bits p/ div.
+            idiv bx ;divide DXAX por BX
+            push dx ;empilha valor do resto
+            cmp ax, 0 ;verifica se quoc. é 0
+            jne R1 ;se não é 0, continua
+
+        R2 := NovoRot
+        ;agora, desemp. os valores e escreve o string
+        R2:
+            pop dx ;desempilha valor
+            add dx, 30h ;transforma em caractere
+            mov ds:[di],dl ;escreve caractere
+            add di, 1 ;incrementa base
+            add cx, -1 ;decrementa contador
+            cmp cx, 0 ;verifica pilha vazia
+            jne R2 ;se não pilha vazia, loop
+
+            mov dx, '$' ;coloca '$'
+            mov ds:[di],dl ;escreve caractere
+            add di, 1 ;incrementa base
+    }
+    senao se EXPRESSION.tipo = caractere entao {
+        db "0", '$'
+
+        mov al, ds:[EXPRESSION.end] ; Traz o caractere para al
+        mov ds:[contador_global_endereco], al ; Coloca na string
+        contador_global_endereco += 2
+    }
+    senao se EXPRESSION.tipo = booleano entao {
+        db "0", '$'
+
+        mov al, ds:[EXPRESSION.end] ; Traz o booleano da memória
+        mov ah, 0 ; Limpa possível lixo em AH
+        cmp ax, 0 ; Compara o valor booleano com 0
+        R0 := NovoRot
+        je R0
+
+        mov al, '1' ; Se nao for igual a 0
+        R1 := NovoRot
+        jmp R1
+
+        R0: ; Se for igual a 0
+            mov al, '0'
+
+        R1: ; Se for igual a 1
+            mov ds:[contador_global_endereco], al ; Coloca na string
+            contador_global_endereco += 2
+    }
+    senao se EXPRESSION.tipo = string entao {
+        mov dx, EXPRESSION.end
+        mov ah, 09h
+        int 21h
+    }
+}
+{2} {
+    se EXPRESSION1.tipo = inteiro entao {
+        db "-00000", '$'
+        mov ax, ds:[EXPRESSION1.end] ; Traz o inteiro para ax
+        mov di, contador_global_endereco
+        contador_global_endereco += 7
+        mov cx, 0 ;contador
+        cmp ax,0 ;verifica sinal
+        R0 := NovoRot
+        jge R0 ;salta se número positivo
+
+        mov bl, 2Dh ;senão, escreve sinal -
+        mov ds:[di], bl
+        add di, 1 ;incrementa índice
+        neg ax ;toma módulo do número
+
+        R0:
+            mov bx, 10 ;divisor
+        R1 := NovoRot
+        R1:
+            add cx, 1 ;incrementa contador
+            mov dx, 0 ;estende 32bits p/ div.
+            idiv bx ;divide DXAX por BX
+            push dx ;empilha valor do resto
+            cmp ax, 0 ;verifica se quoc. é 0
+            jne R1 ;se não é 0, continua
+
+        R2 := NovoRot
+        ;agora, desemp. os valores e escreve o string
+        R2:
+            pop dx ;desempilha valor
+            add dx, 30h ;transforma em caractere
+            mov ds:[di],dl ;escreve caractere
+            add di, 1 ;incrementa base
+            add cx, -1 ;decrementa contador
+            cmp cx, 0 ;verifica pilha vazia
+            jne R2 ;se não pilha vazia, loop
+
+            mov dx, '$' ;coloca '$'
+            mov ds:[di],dl ;escreve caractere
+            add di, 1 ;incrementa base
+    }
+    senao se EXPRESSION1.tipo = caractere entao {
+        db "0", '$'
+
+        mov al, ds:[EXPRESSION1.end] ; Traz o caractere para al
+        mov ds:[contador_global_endereco], al ; Coloca na string
+        contador_global_endereco += 2
+    }
+    senao se EXPRESSION1.tipo = booleano entao {
+        db "0", '$'
+
+        mov al, ds:[EXPRESSION1.end] ; Traz o booleano da memória
+        mov ah, 0 ; Limpa possível lixo em AH
+        cmp ax, 0 ; Compara o valor booleano com 0
+        R0 := NovoRot
+        je R0
+
+        mov al, '1' ; Se nao for igual a 0
+        R1 := NovoRot
+        jmp R1
+
+        R0: ; Se for igual a 0
+            mov al, '0'
+
+        R1: ; Se for igual a 1
+            mov ds:[contador_global_endereco], al ; Coloca na string
+            contador_global_endereco += 2
+    }
+    senao se EXPRESSION1.tipo = string entao {
+        mov dx, EXPRESSION1.end
+        mov ah, 09h
+        int 21h
+    }
+}
+{3} {
+    db 13, 10, '$' ; 13 = '\r', 10 = '\n'
+    mov dx, contador_global_endereco
+    contador_global_endereco += 3
+    mov ah, 09h
+    int 21h
+}
+
+<b>READLN_STATEMENT -> 'readln' '(' IDENTIFIER {1} ( '[' EXPRESSION {2} ']' | lambda {3} ) ')'</b>
+{1} {
+    se tabela.get(IDENTIFIER.lex).classe = constante entao ERRO
+    se tabela.get(IDENTIFIER.lex).tamanho > 0 e tabela.get(IDENTIFIER.lex).tipo != caractere entao ERRO
+
+    db 255 DUP(?) ; cria o buffer
+
+    mov dx, contador_global_endereco
+    mov al, 0FFh ;ou tam do vetor
+    mov ds:[contador_global_endereco], al
+    mov ah, 0Ah
+    int 21h ; le os caracteres
+
+    mov ah, 02h ; gera a quebra de linha
+    mov dl, 0Dh
+    int 21h
+    mov DL, 0Ah
+    int 21h
+}
+{2} {
+    se tabela.get(IDENTIFIER.lex).tipo = inteiro entao {
+        mov di, contador_global_endereco + 2 ;posição do string
+        mov ax, 0 ;acumulador
+        mov cx, 10 ;base decimal
+        mov dx, 1 ;valor sinal +
+        mov bh, 0
+        mov bl, ds:[di] ;caractere
+        cmp bx, 2Dh ;verifica sinal -
+        R0 := NovoRot
+        jne R0 ;se não negativo
+        mov dx, -1 ;valor sinal -
+        add di, 1 ;incrementa posição
+        mov bl, ds:[di] ;próximo caractere
+        R0:
+        push dx ;empilha sinal
+        mov dx, 0 ;reg. multiplicação
+        R1 := NovoRot
+        R1:
+        cmp bx, 0dh ;verifica fim string ('\r')
+        R2 := NovoRot
+        je R2 ;salta se fim string
+        imul cx ;mult. 10
+        add bx, -48 ;converte caractere para inteiro
+        add ax, bx ;soma valor caractere
+        add di, 1 ;incrementa posição
+        mov bh, 0
+        mov bl, ds:[di] ;próximo caractere
+        jmp R1 ;loop
+        R2:
+        pop cx ;desempilha sinal
+        imul cx ;mult. sinal
+
+        mov bx, ds:[EXPRESSION.end]
+        se IDENTIFIER.tipo = inteiro entao {
+            add bx, bx
+        }
+        add bx, IDENTIFIER.end
+        mov ds:[bx], ax
+    }
+    senao se tabela.get(IDENTIFIER.lex).tipo = caractere entao {
+        mov al, ds:[contador_global_endereco + 2] ; tras o caractere do buffer para al
+        mov bx, ds:[EXPRESSION.end]
+        se IDENTIFIER.tipo = inteiro entao {
+            add bx, bx
+        }
+        add bx, IDENTIFIER.end
+        mov ds:[bx], al
+    }
+}
+{3} {
+    se tabela.get(IDENTIFIER.lex).tipo = inteiro entao {
+        mov di, contador_global_endereco + 2 ;posição do string
+        mov ax, 0 ;acumulador
+        mov cx, 10 ;base decimal
+        mov dx, 1 ;valor sinal +
+        mov bh, 0
+        mov bl, ds:[di] ;caractere
+        cmp bx, 2Dh ;verifica sinal -
+        R0 := NovoRot
+        jne R0 ;se não negativo
+        mov dx, -1 ;valor sinal -
+        add di, 1 ;incrementa posição
+        mov bl, ds:[di] ;próximo caractere
+        R0:
+        push dx ;empilha sinal
+        mov dx, 0 ;reg. multiplicação
+        R1 := NovoRot
+        R1:
+        cmp bx, 0dh ;verifica fim string ('\r')
+        R2 := NovoRot
+        je R2 ;salta se fim string
+        imul cx ;mult. 10
+        add bx, -48 ;converte caractere para inteiro
+        add ax, bx ;soma valor caractere
+        add di, 1 ;incrementa posição
+        mov bh, 0
+        mov bl, ds:[di] ;próximo caractere
+        jmp R1 ;loop
+        R2:
+        pop cx ;desempilha sinal
+        imul cx ;mult. sinal
+
+        mov ds:[IDENTIFIER.end], ax
+    }
+    senao se tabela.get(IDENTIFIER.lex).tipo = caractere entao {
+        mov al, ds:[contador_global_endereco + 2] ; tras o caractere do buffer para al
+        mov ds:[IDENTIFIER.end], al
+    }
+    senao se tabela.get(IDENTIFIER.lex).tipo = caractere e tabela.get(IDENTIFIER.lex).tamanho > 0 entao {
+        mov di, contador_global_endereco + 2 ;posição do string
+        mov si, IDENTIFIER.end
+
+        RotInicio := NovoRot
+        RotInicio:
+            mov bl, ds:[di] ; tras o caractere do buffer para bl
+            mov bh, 0
+            cmp bx, 0dh ;verifica fim string ('\r')
+            RotFim := NovoRot
+            je RotFim
+            mov ds:[si], bl
+            inc di
+            inc si
+            jmp RotInicio
+
+        RotFim:
+            mov ds:[si], '$'
+    }
+}
 
 <b>IF_STATEMENT -> 'if' '(' EXPRESSION ')' 'then' STATEMENT_OR_STATEMENTS [ 'else' STATEMENT_OR_STATEMENTS ]</b>
 
@@ -240,14 +674,262 @@ EXPRESSION ::= RELATIONAL_EXPRESSION
 <b>STATEMENT -> FOR_STATEMENT</b>
 <b>STATEMENT -> ASSIGN_STATEMENT</b>
 
-<b>EXPRESSION -> RELATIONAL_EXPRESSION</b>
+<b>EXPRESSION -> RELATIONAL_EXPRESSION {1}</b>
+{1} {
+    EXPRESSION.tipo = RELATIONAL_EXPRESSION.tipo
+    EXPRESSION.end = RELATIONAL_EXPRESSION.end
+}
 
-<b>RELATIONAL_EXPRESSION -> ADDITIVE_EXPRESSION {'=' ADDITIVE_EXPRESSION1}*</b>
-<b>RELATIONAL_EXPRESSION -> ADDITIVE_EXPRESSION {'<>' ADDITIVE_EXPRESSION1}*</b>
-<b>RELATIONAL_EXPRESSION -> ADDITIVE_EXPRESSION {'<' ADDITIVE_EXPRESSION1}*</b>
-<b>RELATIONAL_EXPRESSION -> ADDITIVE_EXPRESSION {'>' ADDITIVE_EXPRESSION1}*</b>
-<b>RELATIONAL_EXPRESSION -> ADDITIVE_EXPRESSION {'<=' ADDITIVE_EXPRESSION1}*</b>
-<b>RELATIONAL_EXPRESSION -> ADDITIVE_EXPRESSION {'>=' ADDITIVE_EXPRESSION1}*</b>
+<b>RELATIONAL_EXPRESSION -> ADDITIVE_EXPRESSION {1} {('=' | '<>' | '<' | '>' | '<=' | '>=') {2} ADDITIVE_EXPRESSION1 {3}}*</b>
+{1} {
+    RELATIONAL_EXPRESSION.tipo = ADDITIVE_EXPRESSION.tipo
+    RELATIONAL_EXPRESSION.end = ADDITIVE_EXPRESSION.end
+}
+{2} {
+    operador = guardar o operador ('=' | '<>' | '<' | '>' | '<=' | '>=') numa variavel
+}
+{3} {
+    se operador = '=' entao {
+        se RELATIONAL_EXPRESSION.tipo != ADDITIVE_EXPRESSION1.tipo entao ERRO
+        se RELATIONAL_EXPRESSION.tipo = inteiro entao {
+            mov ax, ds:[RELATIONAL_EXPRESSION.end]
+            mov bx, ds:[ADDITIVE_EXPRESSION1.end]
+            cmp ax, bx
+
+            RotVerdadeiro := NovoRot
+            je RotVerdadeiro
+            mov al, 00h
+            RotFim := NovoRot
+            jmp RotFim
+
+            RotVerdadeiro:
+                mov al, 01h
+
+            RotFim:
+                RELATIONAL_EXPRESSION.end = NovoTemp()
+                mov ds:[RELATIONAL_EXPRESSION.end], al
+        }
+        senao se RELATIONAL_EXPRESSION.tipo = caractere entao {
+            mov al, ds:[RELATIONAL_EXPRESSION.end]
+            mov bl, ds:[ADDITIVE_EXPRESSION1.end]
+            mov ah, 0
+            mov bh, 0
+            cmp ax, bx
+
+            RotVerdadeiro := NovoRot
+            je RotVerdadeiro
+            mov al, 00h
+            RotFim := NovoRot
+            jmp RotFim
+
+            RotVerdadeiro:
+                mov al, 01h
+
+            RotFim:
+                RELATIONAL_EXPRESSION.end = NovoTemp()
+                mov ds:[RELATIONAL_EXPRESSION.end], al
+        }
+        senao se RELATIONAL_EXPRESSION.tipo = booleano entao {
+            mov al, ds:[RELATIONAL_EXPRESSION.end]
+            mov bl, ds:[ADDITIVE_EXPRESSION1.end]
+            mov ah, 0
+            mov bh, 0
+            cmp ax, bx
+
+            RotVerdadeiro := NovoRot
+            je RotVerdadeiro
+            mov al, 00h
+            RotFim := NovoRot
+            jmp RotFim
+
+            RotVerdadeiro:
+                mov al, 01h
+
+            RotFim:
+                RELATIONAL_EXPRESSION.end = NovoTemp()
+                mov ds:[RELATIONAL_EXPRESSION.end], al
+        }
+        senao se RELATIONAL_EXPRESSION.tipo = string entao {
+            mov di, RELATIONAL_EXPRESSION.end
+            mov si, ADDITIVE_EXPRESSION1.end
+            RotInicio := NovoRot
+            RotFim := NovoRot
+            RotInicio:
+                mov al, ds:[di] ; al = str1[i]
+                mov ah, 0
+                mov bx, '$'
+                cmp ax, bx
+                je RotFim ; sai do for caso str1[i] != '$'
+
+                mov al, ds:[di] ; al = str1[i]
+                mov ah, 0
+                mov bl, ds:[si] ; bl = str2[i]
+                mov bh, 0
+                cmp ax, bx
+                jne RotFim ; break
+                inc di
+                inc si
+                jmp RotInicio
+            
+            mov al, ds:[di] ; al = str1[i]
+            mov ah, 0
+            mov bl, ds:[si] ; bl = str2[i]
+            mov bh, 0
+            cmp ax, bx
+
+            RotVerdadeiro := NovoRot
+            je RotVerdadeiro
+            mov al, 00h
+            RotFim2 := NovoRot
+            jmp RotFim2
+
+            RotVerdadeiro:
+                mov al, 01h
+
+            RotFim2:
+                RELATIONAL_EXPRESSION.end = NovoTemp()
+                mov ds:[RELATIONAL_EXPRESSION.end], al
+        }
+    }
+    senao se operador = '<>' entao {
+        se RELATIONAL_EXPRESSION.tipo != ADDITIVE_EXPRESSION1.tipo entao ERRO
+        se RELATIONAL_EXPRESSION.tipo = inteiro entao {
+            mov ax, ds:[RELATIONAL_EXPRESSION.end]
+            mov bx, ds:[ADDITIVE_EXPRESSION1.end]
+            cmp ax, bx
+
+            RotVerdadeiro := NovoRot
+            je RotVerdadeiro
+            mov al, 01h
+            RotFim := NovoRot
+            jmp RotFim
+
+            RotVerdadeiro:
+                mov al, 00h
+
+            RotFim:
+                RELATIONAL_EXPRESSION.end = NovoTemp()
+                mov ds:[RELATIONAL_EXPRESSION.end], al
+        }
+        senao se RELATIONAL_EXPRESSION.tipo = caractere entao {
+            mov al, ds:[RELATIONAL_EXPRESSION.end]
+            mov bl, ds:[ADDITIVE_EXPRESSION1.end]
+            mov ah, 0
+            mov bh, 0
+            cmp ax, bx
+
+            RotVerdadeiro := NovoRot
+            je RotVerdadeiro
+            mov al, 01h
+            RotFim := NovoRot
+            jmp RotFim
+
+            RotVerdadeiro:
+                mov al, 00h
+
+            RotFim:
+                RELATIONAL_EXPRESSION.end = NovoTemp()
+                mov ds:[RELATIONAL_EXPRESSION.end], al
+        }
+        senao se RELATIONAL_EXPRESSION.tipo = booleano entao {
+            mov al, ds:[RELATIONAL_EXPRESSION.end]
+            mov bl, ds:[ADDITIVE_EXPRESSION1.end]
+            mov ah, 0
+            mov bh, 0
+            cmp ax, bx
+
+            RotVerdadeiro := NovoRot
+            je RotVerdadeiro
+            mov al, 01h
+            RotFim := NovoRot
+            jmp RotFim
+
+            RotVerdadeiro:
+                mov al, 00h
+
+            RotFim:
+                RELATIONAL_EXPRESSION.end = NovoTemp()
+                mov ds:[RELATIONAL_EXPRESSION.end], al
+        }
+    }
+    senao se operador = '<' entao {
+        se RELATIONAL_EXPRESSION.tipo != inteiro ou ADDITIVE_EXPRESSION1.tipo != inteiro entao ERRO
+        mov ax, ds:[RELATIONAL_EXPRESSION.end]
+        mov bx, ds:[ADDITIVE_EXPRESSION1.end]
+        cmp ax, bx
+
+        RotVerdadeiro := NovoRot
+        jl RotVerdadeiro
+        mov al, 00h
+        RotFim := NovoRot
+        jmp RotFim
+
+        RotVerdadeiro:
+            mov al, 01h
+
+        RotFim:
+            RELATIONAL_EXPRESSION.end = NovoTemp()
+            mov ds:[RELATIONAL_EXPRESSION.end], al
+    }
+    senao se operador = '<=' entao {
+        se RELATIONAL_EXPRESSION.tipo != inteiro ou ADDITIVE_EXPRESSION1.tipo != inteiro entao ERRO
+        mov ax, ds:[RELATIONAL_EXPRESSION.end]
+        mov bx, ds:[ADDITIVE_EXPRESSION1.end]
+        cmp ax, bx
+
+        RotVerdadeiro := NovoRot
+        jle RotVerdadeiro
+        mov al, 00h
+        RotFim := NovoRot
+        jmp RotFim
+
+        RotVerdadeiro:
+            mov al, 01h
+
+        RotFim:
+            RELATIONAL_EXPRESSION.end = NovoTemp()
+            mov ds:[RELATIONAL_EXPRESSION.end], al
+    }
+    senao se operador = '>' entao {
+        se RELATIONAL_EXPRESSION.tipo != inteiro ou ADDITIVE_EXPRESSION1.tipo != inteiro entao ERRO
+        mov ax, ds:[RELATIONAL_EXPRESSION.end]
+        mov bx, ds:[ADDITIVE_EXPRESSION1.end]
+        cmp ax, bx
+
+        RotVerdadeiro := NovoRot
+        jg RotVerdadeiro
+        mov al, 00h
+        RotFim := NovoRot
+        jmp RotFim
+
+        RotVerdadeiro:
+            mov al, 01h
+
+        RotFim:
+            RELATIONAL_EXPRESSION.end = NovoTemp()
+            mov ds:[RELATIONAL_EXPRESSION.end], al
+    }
+    senao se operador = '>=' entao {
+        se RELATIONAL_EXPRESSION.tipo != inteiro ou ADDITIVE_EXPRESSION1.tipo != inteiro entao ERRO
+        mov ax, ds:[RELATIONAL_EXPRESSION.end]
+        mov bx, ds:[ADDITIVE_EXPRESSION1.end]
+        cmp ax, bx
+
+        RotVerdadeiro := NovoRot
+        jge RotVerdadeiro
+        mov al, 00h
+        RotFim := NovoRot
+        jmp RotFim
+
+        RotVerdadeiro:
+            mov al, 01h
+
+        RotFim:
+            RELATIONAL_EXPRESSION.end = NovoTemp()
+            mov ds:[RELATIONAL_EXPRESSION.end], al
+    }
+    RELATIONAL_EXPRESSION.tipo = booleano
+}
 
 <b>ADDITIVE_EXPRESSION -> MULTIPLICATIVE_EXPRESSION {1} {('+' | '-' | 'or') {2} MULTIPLICATIVE_EXPRESSION1 {3}}*</b>
 {1} {
@@ -376,12 +1058,16 @@ EXPRESSION ::= RELATIONAL_EXPRESSION
     PRIMARY_EXPRESSION.end = EXPRESSION.end
 }
 
-<b>PRIMARY_EXPRESSION -> IDENTIFIER {1} [ '[' EXPRESSION {2} ']' ]</b>
+<b>PRIMARY_EXPRESSION -> IDENTIFIER {1} ( '[' {2} EXPRESSION {3} ']' | lambda {4} )</b>
 {1} {
+    se tabela.get(IDENTIFIER.lex) == null entao ERRO
     PRIMARY_EXPRESSION.tipo = IDENTIFIER.tipo
     PRIMARY_EXPRESSION.end = IDENTIFIER.end
 }
 {2} {
+    se tabela.get(IDENTIFIER.lex).tamanho = 0 entao ERRO
+}
+{3} {
     se EXPRESSION.tipo != inteiro entao ERRO
     PRIMARY_EXPRESSION.end = NovoTemp()
     mov bx, ds:[EXPRESSION.end]
@@ -391,6 +1077,9 @@ EXPRESSION ::= RELATIONAL_EXPRESSION
     add bx, IDENTIFIER.end
     mov bx, ds:[bx]
     mov ds:[PRIMARY_EXPRESSION.end], bx
+}
+{4} {
+    se tabela.get(IDENTIFIER.lex).tamanho > 0 entao ERRO
 }
 </pre>
 
