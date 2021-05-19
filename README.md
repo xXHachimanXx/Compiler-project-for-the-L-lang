@@ -680,8 +680,8 @@ EXPRESSION ::= RELATIONAL_EXPRESSION
 <b>FOR_STATEMENT -> 'for' '(' [COMMA_SEPARATED_STATEMENTS] ';' {1} EXPRESSION {2} ';' [COMMA_SEPARATED_STATEMENTS] ') {3} STATEMENT_OR_STATEMENTS {4}</b>
 {1} {
     RotInicio := NovoRot
-    RotComandos := NovoRot
     RotIncremento := NovoRot
+    RotComandos := NovoRot
     RotFim := NovoRot
     RotInicio:
 }
