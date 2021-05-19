@@ -219,7 +219,7 @@ EXPRESSION ::= RELATIONAL_EXPRESSION
 <b>WRITE_STATEMENT -> 'write' '(' EXPRESSION {1} {',' EXPRESSION1 {2}}* ')'</b>
 {1} {
     se EXPRESSION.tipo = inteiro entao {
-        db "-00000", '$'
+        db "-00000", '$' ; Cria uma string na área de dados para 
         mov ax, ds:[EXPRESSION.end] ; Traz o inteiro para ax
         mov di, contador_global_endereco
         contador_global_endereco += 7
@@ -530,7 +530,7 @@ EXPRESSION ::= RELATIONAL_EXPRESSION
 <b>READLN_STATEMENT -> 'readln' '(' IDENTIFIER {1} ( '[' EXPRESSION {2} ']' | lambda {3} ) ')'</b>
 {1} {
     se tabela.get(IDENTIFIER.lex).classe = constante entao ERRO
-    se tabela.get(IDENTIFIER.lex).tamanho > 0 e tabela.get(IDENTIFIER.lex).tipo != caractere entao ERRO
+    se tabela.get(IDENTIFIER.lex).tamanho > 0 e tabela.get(IDENTIFIER.lex).tipo != string entao ERRO
 
     db 255 DUP(?) ; cria o buffer
 
@@ -635,16 +635,16 @@ EXPRESSION ::= RELATIONAL_EXPRESSION
         mov al, ds:[contador_global_endereco + 2] ; tras o caractere do buffer para al
         mov ds:[IDENTIFIER.end], al
     }
-    senao se tabela.get(IDENTIFIER.lex).tipo = caractere e tabela.get(IDENTIFIER.lex).tamanho > 0 entao {
+    senao se tabela.get(IDENTIFIER.lex).tipo = string entao {
         mov di, contador_global_endereco + 2 ;posição do string
         mov si, IDENTIFIER.end
 
         RotInicio := NovoRot
+        RotFim := NovoRot
         RotInicio:
             mov bl, ds:[di] ; tras o caractere do buffer para bl
             mov bh, 0
             cmp bx, 0dh ;verifica fim string ('\r')
-            RotFim := NovoRot
             je RotFim
             mov ds:[si], bl
             inc di
@@ -656,11 +656,119 @@ EXPRESSION ::= RELATIONAL_EXPRESSION
     }
 }
 
-<b>IF_STATEMENT -> 'if' '(' EXPRESSION ')' 'then' STATEMENT_OR_STATEMENTS [ 'else' STATEMENT_OR_STATEMENTS ]</b>
+<b>IF_STATEMENT -> 'if' '(' EXPRESSION {1} ')' 'then' STATEMENT_OR_STATEMENTS ( 'else' {2} STATEMENT_OR_STATEMENTS {3} | lambda {4} )</b>
+{1} {
+    se EXPRESSION.tipo != booleano entao ERRO
+    RotFalso := NovoRot
+    mov al, ds:[EXPRESSION.end] ; Traz o booleano da memória
+    mov ah, 0 ; Limpa possível lixo em AH
+    cmp ax, 0 ; Compara o valor booleano com 0
+    je RotFalso
+}
+{2} {
+    RotFim := NovoRot
+    jmp RotFim
+    RotFalso:
+}
+{3} {
+    RotFim:
+}
+{4} {
+    RotFalso:
+}
 
-<b>FOR_STATEMENT -> 'for' '(' [COMMA_SEPARATED_STATEMENTS] ';' EXPRESSION ';' [COMMA_SEPARATED_STATEMENTS] ')STATEMENT_OR_STATEMENTS</b>
+<b>FOR_STATEMENT -> 'for' '(' [COMMA_SEPARATED_STATEMENTS] ';' {1} EXPRESSION {2} ';' [COMMA_SEPARATED_STATEMENTS] ') {3} STATEMENT_OR_STATEMENTS {4}</b>
+{1} {
+    RotInicio := NovoRot
+    RotComandos := NovoRot
+    RotIncremento := NovoRot
+    RotFim := NovoRot
+    RotInicio:
+}
+{2} {
+    se EXPRESSION.tipo != booleano entao ERRO
+    mov al, ds:[EXPRESSION.end] ; Traz o booleano da memória
+    mov ah, 0 ; Limpa possível lixo em AH
+    cmp ax, 0 ; Compara o valor booleano com 0
+    je RotFim
+    jmp RotComandos
+    RotIncremento:
+}
+{3} {
+    jmp RotInicio
+    RotComandos:
+}
+{4} {
+    jmp RotIncremento
+    RotFim:
+}
 
-<b>ASSIGN_STATEMENT -> IDENTIFIER [ '[' EXPRESSION ']' ] ':=' EXPRESSION1</b>
+<b>ASSIGN_STATEMENT -> IDENTIFIER {1} ( ':=' EXPRESSION1 {2} | '[' {3} EXPRESSION {4} ']' ':=' EXPRESSION2 {5} )</b>
+{1} {
+    se tabela.get(IDENTIFIER.lex) = null entao ERRO
+}
+{2} {
+    se tabela.get(IDENTIFIER.lex).tipo != EXPRESSION1.tipo entao ERRO
+    se IDENTIFIER.tipo = inteiro entao {
+        mov ax, ds:[EXPRESSION1.end]
+        mov ds:[IDENTIFIER.end], ax
+    }
+    senao se IDENTIFIER.tipo = caractere entao {
+        mov al, ds:[EXPRESSION1.end]
+        mov ds:[IDENTIFIER.end], al
+    }
+    senao se IDENTIFIER.tipo = booleano entao {
+        mov al, ds:[EXPRESSION1.end]
+        mov ds:[IDENTIFIER.end], al
+    }
+    senao se IDENTIFIER.tipo = string entao {
+        mov di, EXPRESSION1.end ;posição do string
+        mov si, IDENTIFIER.end
+
+        RotInicio := NovoRot
+        RotFim := NovoRot
+        RotInicio:
+            mov bl, ds:[di] ; tras o caractere do buffer para bl
+            mov bh, 0
+            cmp bx, 24h ;verifica fim string ('$')
+            je RotFim
+            mov ds:[si], bl
+            inc di
+            inc si
+            jmp RotInicio
+
+        RotFim:
+            mov ds:[si], '$'
+    }
+}
+{3} {
+    se tabela.get(IDENTIFIER.lex).tamanho = 0 entao ERRO
+}
+{4} {
+    se EXPRESSION.tipo != inteiro entao ERRO
+}
+{5} {
+    se tabela.get(IDENTIFIER.lex).tipo != EXPRESSION2.tipo entao ERRO
+    se tabela.get(IDENTIFIER.lex).tipo = string e EXPRESSION2.tipo = string entao ERRO
+    mov bx, IDENTIFIER.end ; traz o endereço base do arranjo
+    mov si, ds:[EXPRESSION.end] ; traz o índice para si
+    se tabela.get(IDENTIFIER.lex).tipo = inteiro entao {
+        add si, si
+    }
+    add bx, si
+    se IDENTIFIER.tipo = inteiro entao {
+        mov ax, ds:[EXPRESSION2.end]
+        mov ds:[bx], ax
+    }
+    senao se IDENTIFIER.tipo = caractere entao {
+        mov al, ds:[EXPRESSION2.end]
+        mov ds:[bx], al
+    }
+    senao se IDENTIFIER.tipo = booleano entao {
+        mov al, ds:[EXPRESSION2.end]
+        mov ds:[bx], al
+    }
+}
 
 <b>STATEMENT_OR_STATEMENTS -> TERMINATED_STATEMENT</b>
 <b>STATEMENT_OR_STATEMENTS -> '{' {TERMINATED_STATEMENT}* '}'</b>
@@ -1060,7 +1168,7 @@ EXPRESSION ::= RELATIONAL_EXPRESSION
 
 <b>PRIMARY_EXPRESSION -> IDENTIFIER {1} ( '[' {2} EXPRESSION {3} ']' | lambda {4} )</b>
 {1} {
-    se tabela.get(IDENTIFIER.lex) == null entao ERRO
+    se tabela.get(IDENTIFIER.lex) = null entao ERRO
     PRIMARY_EXPRESSION.tipo = IDENTIFIER.tipo
     PRIMARY_EXPRESSION.end = IDENTIFIER.end
 }
