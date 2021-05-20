@@ -822,9 +822,19 @@ class Parser {
                 eat();
 
                 if (currentToken.type == TokenType.LEFT_BRACKET) {
+                    Symbol s = this.semantic.getDeclaredSymbol(identifier);
+                    if(!ParserUtils.isVet(s))
+                        SemanticErros.incompatibleTypes(lexer.line);
+
                     eat(TokenType.LEFT_BRACKET);
                     subscriptExpr = parseExpression();
                     eat(TokenType.RIGHT_BRACKET);
+                }else{
+                    Symbol s = this.semantic.getDeclaredSymbol(identifier);
+
+                    if(s.size > 0 && !currentToken.value.equals(")")){
+                        SemanticErros.incompatibleTypes(lexer.line);
+                    }
                 }
 
                 if (subscriptExpr == null) {
@@ -944,13 +954,6 @@ class Parser {
                         || currentToken.type == TokenType.SMALLER_OR_EQUAL
                         || currentToken.type == TokenType.GREATER_OR_EQUAL
         ) {
-            if(node instanceof IdentifierExpressionNode){
-                //Semantic Action
-                if(ParserUtils.isVet(semantic.getDeclaredSymbol(((IdentifierExpressionNode) node).identifier))){
-                    SemanticErros.incompatibleTypes(lexer.line);
-                }
-            }
-
             String operator = currentToken.value;
             eat();
 
@@ -1096,6 +1099,12 @@ class Parser {
         ReadlnStatementNode node;
         eat(TokenType.LEFT_PAREN);
         String identifier = currentToken.value;
+
+        Symbol s = semantic.getDeclaredSymbol(identifier);
+
+        if(s.symbolClass == SymbolClass.CONST)
+            SemanticErros.changeConst(identifier, lexer.line);
+
         eat(TokenType.IDENTIFIER);
         if (currentToken.type == TokenType.LEFT_BRACKET) {
             eat();
@@ -1104,6 +1113,9 @@ class Parser {
             eat(TokenType.RIGHT_BRACKET);
         } else {
             node = new ReadlnVarStatementNode(identifier);
+
+            if(s.type != TokenType.STRING && ParserUtils.isVet(s))
+                SemanticErros.incompatibleTypes(lexer.line);
         }
         eat(TokenType.RIGHT_PAREN);
         return node;

@@ -85,10 +85,9 @@ module macro value1Ptr, value2Ptr, tempPtr
 endm
 
 land macro value1Ptr, value2Ptr, tempPtr
-    mov ax, ds:[value1Ptr]
-    cwd ;expandir AX
-    and ax, ds:[value2Ptr]
-    mov ds:[tempPtr], ax
+    mov al, ds:[value1Ptr]
+    and al, ds:[value2Ptr]
+    mov ds:[tempPtr], al
 endm
 
 ; =
