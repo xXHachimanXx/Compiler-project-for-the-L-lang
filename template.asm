@@ -255,13 +255,13 @@ assignStringVar macro idAddr, exprAddr, idSize
     add ax, idSize ;
 
     ; c = exprAddr
-    mov cx, exprAddr
+    mov si, exprAddr
 
 Again:
-    mov  dl, ds:[cx]    ; d = str[c]
+    mov  dl, ds:[si]    ; d = str[c]
     mov  ds:[bx], dl    ; C[b] = d
     inc  bx 
-    inc  cx            
+    inc  si    
     cmp  bx, ax         
     
     jne  Again
