@@ -247,12 +247,13 @@ assignStringVar macro idAddr, exprAddr, idSize
     LOCAL RotInicio, RotFim
     mov di, exprAddr ;posição do string
     mov si, idAddr
-    mov al, '$'
+    mov cl, '$'
+    
 
     RotInicio:
         mov bl, ds:[di] ; tras o caractere do buffer para bl
         mov bh, 0
-        cmp bx, al ;verifica fim string ('$')
+        cmp bl, cl ;verifica fim string ('$')
         je RotFim
         mov ds:[si], bl
         inc di
@@ -260,7 +261,7 @@ assignStringVar macro idAddr, exprAddr, idSize
         jmp RotInicio
 
     RotFim:
-        mov ds:[si], '$'
+        mov ds:[si], "$ "
 endm
 
 
@@ -372,7 +373,7 @@ data segment
     db 4000h DUP(64)
     db 13, 10, '$'
     c db 4 DUP(?)
-    db "teste", '$'
+    db "12345678", '$'
 data ends
 
 ; --------------- CODE
@@ -384,7 +385,8 @@ start:
     MOV DS, AX
 
     createIntTemp 4, 0
-    print 16391
+    assignStringVar 16387 16391 4
+    print 16387
     print 16384
 
     MOV AH, 4CH ; Exit

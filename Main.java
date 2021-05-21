@@ -1835,7 +1835,7 @@ class CodeGenerator {
         int addr = temp;
         int idSize = identifierSymbol.size;
 
-        addCode(String.format("assignStringVar %d %d", idAddr, exprAddr));
+        addCode(String.format("assignStringVar %d %d %d", idAddr, exprAddr, idSize));
         
         return addr+idSize;
     }

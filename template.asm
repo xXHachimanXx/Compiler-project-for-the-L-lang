@@ -247,12 +247,13 @@ assignStringVar macro idAddr, exprAddr, idSize
     LOCAL RotInicio, RotFim
     mov di, exprAddr ;posição do string
     mov si, idAddr
-    mov al, '$'
+    mov cl, '$'
+    
 
     RotInicio:
         mov bl, ds:[di] ; tras o caractere do buffer para bl
         mov bh, 0
-        cmp bx, al ;verifica fim string ('$')
+        cmp bl, cl ;verifica fim string ('$')
         je RotFim
         mov ds:[si], bl
         inc di
