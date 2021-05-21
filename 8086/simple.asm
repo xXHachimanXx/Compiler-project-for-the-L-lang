@@ -248,20 +248,30 @@ assignStringVar macro idAddr, exprAddr, idSize
     mov di, exprAddr ;posição do string
     mov si, idAddr
     mov cl, '$'
-    
+    mov ax, 0
+    mov dx, idSize
 
+    ; c[2] a 
+    ; c = abcde
     RotInicio:
         mov bl, ds:[di] ; tras o caractere do buffer para bl
         mov bh, 0
+
         cmp bl, cl ;verifica fim string ('$')
         je RotFim
+
+        cmp ax, dx
+        je RotFim
+
         mov ds:[si], bl
         inc di
         inc si
+        inc ax
+
         jmp RotInicio
 
     RotFim:
-        mov ds:[si], "$ "
+        mov ds:[si], cl
 endm
 
 
@@ -271,34 +281,23 @@ print macro ptr
     int 21h
 endm
 
-printStr macro idAddr, idSize
-    LOCAL Again
+; printStr macro idAddr, idSize
+;     LOCAL Again
 
-    mov bx, idAddr ; b = idAddr
-    mov cx, idAddr ; a = idAddr + idSize
-    add cx, idSize ;
-    
-
-Again:
-    mov dx, bx
-    mov ah, 02h
-    int 21h
-    inc  bx                  ;4.
-    cmp  dx, cx             ;5.
-    jne  Again
-
-    ; for(b = idAddr; b < a; b++, c++) print(b)
-; R1:
-;     cmp bx, ax
-;     jge R2
-;     print bx
-;     add ax, 1
-;     jmp R1
-; R2: 
-endm
+;     mov bx, idAddr ; b = idAddr
+;     mov cx, idAddr ; a = idAddr + idSize
+;     add cx, idSize ;
+; Again:
+;     mov dx, bx
+;     mov ah, 02h
+;     int 21h
+;     inc  bx                  ;4.
+;     cmp  dx, cx             ;5.
+;     jne  Again
+; endm
 
 appendDollarToStr macro
-    mov dx, '$' ;coloca '$'
+    mov dl, '$' ;coloca '$'
     mov ds:[di],dl ;escreve caractere
     add di, 1 ;incrementa base
 endm
@@ -372,7 +371,7 @@ endm
 data segment
     db 4000h DUP(64)
     db 13, 10, '$'
-    c db 4 DUP(?)
+    c db 5 DUP(?)
     db "12345678", '$'
 data ends
 
@@ -384,8 +383,8 @@ start:
     MOV AX, data
     MOV DS, AX
 
-    createIntTemp 4, 0
-    assignStringVar 16387 16391 4
+    createIntTemp 5, 0
+    assignStringVar 16387 16392 5
     print 16387
     print 16384
 

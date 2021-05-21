@@ -1870,9 +1870,9 @@ class CodeGenerator {
         addCode(String.format("print %d", addr));
     }
 
-    public void writeStr(int addr, int size) {
-        addCode(String.format("printStr %d %d", addr, size));
-    }
+    // public void writeStr(int addr, int size) {
+    //     addCode(String.format("printStr %d %d", addr, size));
+    // }
 
     private int charToStr(int addr) {
         int strAddr = createStrTemp("0");
@@ -1907,7 +1907,7 @@ class CodeGenerator {
     public void declSymbol(Symbol s) {
         int size = ParserUtils.getTypeSize(s.type, s.size);
         s.address = address;
-        address += size-1;
+        address += size-1; // gambs
         if (s.size > 0) {
             if (s.type == TokenType.INT)
                 addData(String.format("%s dw %d DUP(?)", s.name, s.size));
