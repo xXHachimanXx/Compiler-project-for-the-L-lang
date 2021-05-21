@@ -1147,25 +1147,33 @@ class Parser {
         String identifier = currentToken.value;
 
         //Semantic Action
-        Symbol s = this.semantic.getDeclaredSymbol(identifier);
+        Symbol identifierSymbol = this.semantic.getDeclaredSymbol(identifier);
 
         eat();
 
         if (currentToken.type == TokenType.LEFT_BRACKET) {
             eat();
+            
+            // if(identifierSymbol.size == 0) 
+            //   System.out.print("System.out.print("ALGUM ERRO AQUI");
+
             subscriptExpr = parseExpression();
+
+            // if(subscriptExpr.type != TokenType.INTEGER || subscriptExpr.type != TokenType.INT) 
+            //   System.out.print("ALGUM ERRO AQUI");
+            
             eat(TokenType.RIGHT_BRACKET);
-        }
+        } 
 
         eat(TokenType.ASSIGN);
 
         if (subscriptExpr == null) {
             node = new IdentifierAssignStatementNode(identifier, parseExpression());
 
-            if(s.type == TokenType.STRING && this.semantic.getExpressionType(node.value) != TokenType.STRING){
+            if(identifierSymbol.type == TokenType.STRING && this.semantic.getExpressionType(node.value) != TokenType.STRING){
                 SemanticErros.incompatibleTypes(lexer.line);
             }
-            if(s.type != TokenType.STRING && ParserUtils.isVet(s)){
+            if(identifierSymbol.type != TokenType.STRING && ParserUtils.isVet(identifierSymbol)){
                 SemanticErros.incompatibleTypes(lexer.line);
             }
 
@@ -1179,14 +1187,13 @@ class Parser {
         this.semantic.verifyTypeCompability(identifier, semantic.getExpressionType(node.value));
         this.semantic.verifyClassCompatibility(identifier);
 
-        Symbol identifierSymbol = s;
         int idAddr = identifierSymbol.address;
         TokenType idType = identifierSymbol.type;
 
         if(subscriptExpr == null) {
-            if(s.type == TokenType.STRING) {
+            if(identifierSymbol.type == TokenType.STRING) {
                 this.codegen.doStringAssignStatement(
-                    idAddr, node.value.end, idType, s
+                    idAddr, node.value.end, idType, identifierSymbol
                 );
             }
             else {
@@ -1828,7 +1835,7 @@ class CodeGenerator {
         int addr = temp;
         int idSize = identifierSymbol.size;
 
-        addCode(String.format("assignStringVar %d %d %d", idAddr, exprAddr, idSize));
+        addCode(String.format("assignStringVar %d %d", idAddr, exprAddr));
         
         return addr+idSize;
     }
@@ -1887,7 +1894,7 @@ class CodeGenerator {
 
     public void writeExpression(int addr, TokenType type) {
         switch (type) {
-            case STRING: writeStr(addr, 4); break; // Testando imediato
+            case STRING: write(addr); break; // Testando imediato
             case CHAR: write(charToStr(addr)); break;
             case BOOLEAN: write(boolToStr(addr)); break;
             case INT: write(intToStr(addr)); break;
@@ -1900,7 +1907,7 @@ class CodeGenerator {
     public void declSymbol(Symbol s) {
         int size = ParserUtils.getTypeSize(s.type, s.size);
         s.address = address;
-        address += size;
+        address += size-1;
         if (s.size > 0) {
             if (s.type == TokenType.INT)
                 addData(String.format("%s dw %d DUP(?)", s.name, s.size));

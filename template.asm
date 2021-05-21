@@ -244,27 +244,23 @@ assignArray macro value1Ptr, value2Ptr, idType, idIndexPtr
 endm
 
 assignStringVar macro idAddr, exprAddr, idSize
-    LOCAL Again
+    LOCAL RotInicio, RotFim
+    mov di, exprAddr ;posição do string
+    mov si, idAddr
+    mov al, '$'
 
-    ; b = idAddr
-    mov bx, idAddr 
+    RotInicio:
+        mov bl, ds:[di] ; tras o caractere do buffer para bl
+        mov bh, 0
+        cmp bx, al ;verifica fim string ('$')
+        je RotFim
+        mov ds:[si], bl
+        inc di
+        inc si
+        jmp RotInicio
 
-    ; a = idAddr + idSize
-    mov ax, idAddr 
-    add ax, idSize ;
-
-    ; c = exprAddr
-    mov si, exprAddr
-
-Again:
-    mov  dl, ds:[si]    ; d = str[c]
-    mov  ds:[bx], dl    ; C[b] = d
-    inc  bx 
-    inc  si    
-    cmp  bx, ax         
-    
-    jne  Again
-
+    RotFim:
+        mov ds:[si], '$'
 endm
 
 

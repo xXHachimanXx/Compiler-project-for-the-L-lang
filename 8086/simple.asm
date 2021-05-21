@@ -85,10 +85,9 @@ module macro value1Ptr, value2Ptr, tempPtr
 endm
 
 land macro value1Ptr, value2Ptr, tempPtr
-    mov ax, ds:[value1Ptr]
-    cwd ;expandir AX
-    and ax, ds:[value2Ptr]
-    mov ds:[tempPtr], ax
+    mov al, ds:[value1Ptr]
+    and al, ds:[value2Ptr]
+    mov ds:[tempPtr], al
 endm
 
 ; =
@@ -245,27 +244,23 @@ assignArray macro value1Ptr, value2Ptr, idType, idIndexPtr
 endm
 
 assignStringVar macro idAddr, exprAddr, idSize
-    LOCAL Again
+    LOCAL RotInicio, RotFim
+    mov di, exprAddr ;posição do string
+    mov si, idAddr
+    mov al, '$'
 
-    ; b = idAddr
-    mov bx, idAddr 
+    RotInicio:
+        mov bl, ds:[di] ; tras o caractere do buffer para bl
+        mov bh, 0
+        cmp bx, al ;verifica fim string ('$')
+        je RotFim
+        mov ds:[si], bl
+        inc di
+        inc si
+        jmp RotInicio
 
-    ; a = idAddr + idSize
-    mov ax, idAddr 
-    add ax, idSize ;
-
-    ; c = exprAddr
-    mov si, OFFSET m1
-
-Again:
-    mov  dl, ds:[si]    ; d = str[c]
-    mov  ds:[bx], dl    ; C[b] = d
-    inc  bx 
-    inc  si           
-    cmp  bx, ax         
-    
-    jne  Again
-
+    RotFim:
+        mov ds:[si], '$'
 endm
 
 
@@ -377,7 +372,7 @@ data segment
     db 4000h DUP(64)
     db 13, 10, '$'
     c db 4 DUP(?)
-    db "12345678", '$'
+    db "teste", '$'
 data ends
 
 ; --------------- CODE
@@ -389,8 +384,7 @@ start:
     MOV DS, AX
 
     createIntTemp 4, 0
-    assignStringVar 16387 16392 4
-    printStr 16387 4
+    print 16391
     print 16384
 
     MOV AH, 4CH ; Exit
