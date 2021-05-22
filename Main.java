@@ -833,7 +833,8 @@ class Parser {
                 }else{
                     Symbol s = this.semantic.getDeclaredSymbol(identifier);
 
-                    if(s.size > 0 && !currentToken.value.equals(")")){
+                    //gambs  (a)
+                    if(s.size > 0 && !currentToken.value.equals(")") && !currentToken.value.equals(",")){
                         SemanticErros.incompatibleTypes(lexer.line);
                     }
                 }
@@ -1115,9 +1116,15 @@ class Parser {
         eat(TokenType.IDENTIFIER);
         if (currentToken.type == TokenType.LEFT_BRACKET) {
             eat();
+            
             ExpressionNode expression = parseExpression();
             node = new ReadlnArrayStatementNode(identifier, expression);
-            this.codegen.doReadlnA2(s, codegen.address, expression.end);
+
+            if(this.semantic.getExpressionType(expression) != TokenType.INT) {
+                SemanticErros.incompatibleTypes(lexer.line);
+            }
+            this.codegen.doReadlnA2(s, expression.end);
+
             eat(TokenType.RIGHT_BRACKET);
         } 
         
@@ -1127,7 +1134,7 @@ class Parser {
             if(s.type != TokenType.STRING && ParserUtils.isVet(s))
                 SemanticErros.incompatibleTypes(lexer.line);
 
-            this.codegen.doReadlnA3(s, codegen.address);
+            this.codegen.doReadlnA3(s);
         }
         eat(TokenType.RIGHT_PAREN);
         return node;
@@ -1456,10 +1463,12 @@ class Semantic{
 
         if(node instanceof ParenthesizedExpressionNode){
             tokenType = getExpressionType(((ParenthesizedExpressionNode) node).expression);
-        }else if(node instanceof UnaryExpressionNode){
+        }
+        else if(node instanceof UnaryExpressionNode){
             tokenType = getExpressionType(((UnaryExpressionNode) node).expression);
             verifyUnaryOperator(((UnaryExpressionNode) node).operator, tokenType);
-        }else if(node instanceof BinaryExpressionNode){
+        }
+        else if(node instanceof BinaryExpressionNode){
             tokenTypeLeft = getExpressionType(((BinaryExpressionNode) node).leftExpression);
             tokenTypeRight = getExpressionType(((BinaryExpressionNode) node).rightExpression);
 
@@ -1690,12 +1699,17 @@ class CodeGenerator {
     int address = 16384; // Next variable address relatively to DS register
     int temp = 0; // Adress of the last temporary value relatively to DS register
     int newLineTemp = -1;
+    int readlnBuffer = -1;
     long label = 0;
 
     public CodeGenerator() {
         newLineTemp = address;
         addData("db 13, 10, '$'");
         address += 3;
+
+        readlnBuffer = address;
+        addData("db 255 DUP(?)");
+        address += 255;
     }
 
     public void newLabel() {
@@ -1883,30 +1897,30 @@ class CodeGenerator {
     }
 
     public void doReadlnA1() {
-        addCode(String.format("readlnA1 %d", address));
+        addCode(String.format("readlnA1 %d", readlnBuffer));
     }
 
-    public void doReadlnA2(Symbol identifierSymbol, int addr, int exprAddr) {
+    public void doReadlnA2(Symbol identifierSymbol, int exprAddr) {
         if(identifierSymbol.type == TokenType.INT) {
-            addCode(String.format("readlnA2P1 %d %d %d", temp+2, identifierSymbol.address, exprAddr));
+            addCode(String.format("readlnA2P1 %d %d %d", readlnBuffer+2, identifierSymbol.address, exprAddr));
         }
 
         else if(identifierSymbol.type == TokenType.CHAR) {
-            addCode(String.format("readlnA2P2 %d %d %d", temp+2, identifierSymbol.address, exprAddr));
+            addCode(String.format("readlnA2P2 %d %d %d", readlnBuffer+2, identifierSymbol.address, exprAddr));
         }
     }
 
-    public void doReadlnA3(Symbol identifierSymbol, int addr) {
+    public void doReadlnA3(Symbol identifierSymbol) {
         if (identifierSymbol.type == TokenType.INT) {
-            addCode(String.format("readlnA3P1 %d %d", temp+2, identifierSymbol.address));
+            addCode(String.format("readlnA3P1 %d %d", readlnBuffer+2, identifierSymbol.address));
         }
 
         else if(identifierSymbol.type == TokenType.CHAR) {
-            addCode(String.format("readlnA3P2 %d %d", temp+2, identifierSymbol.address));
+            addCode(String.format("readlnA3P2 %d %d", readlnBuffer+2, identifierSymbol.address));
         }
 
         else if(identifierSymbol.type == TokenType.STRING) {
-            addCode(String.format("readlnA3P3 %d %d", temp+2, identifierSymbol.address));
+            addCode(String.format("readlnA3P3 %d %d", readlnBuffer+2, identifierSymbol.address));
         }
     }
 

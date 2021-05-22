@@ -367,8 +367,6 @@ charToStr macro ptr, strPtr
 endm
 
 readlnA1 macro globalCounterAddr
-    db 255 DUP(?) ; cria o buffer
-
     mov dx, globalCounterAddr
     mov al, 0FFh ;ou tam do vetor
     mov ds:[globalCounterAddr], al
@@ -477,7 +475,7 @@ endm
 readlnA3P3 macro globalCounterAddr, idAddr
     LOCAL RotInicio, RotFim
 
-    mov di, contador_global_endereco + 2 ;posição do string
+    mov di, globalCounterAddr ;posição do string
     mov si, idAddr
     
     RotInicio:

@@ -367,8 +367,6 @@ charToStr macro ptr, strPtr
 endm
 
 readlnA1 macro globalCounterAddr
-    db 255 DUP(?) ; cria o buffer
-
     mov dx, globalCounterAddr
     mov al, 0FFh ;ou tam do vetor
     mov ds:[globalCounterAddr], al
@@ -477,7 +475,7 @@ endm
 readlnA3P3 macro globalCounterAddr, idAddr
     LOCAL RotInicio, RotFim
 
-    mov di, contador_global_endereco + 2 ;posição do string
+    mov di, globalCounterAddr ;posição do string
     mov si, idAddr
     
     RotInicio:
@@ -500,8 +498,10 @@ endm
 data segment
     db 4000h DUP(64)
     db 13, 10, '$'
+    db 255 DUP(?)
     a db 4 DUP(?)
-    db "abc", '$'
+    db "0", '$'
+    db "0", '$'
 data ends
 
 ; --------------- CODE
@@ -513,8 +513,15 @@ start:
     MOV DS, AX
 
     createIntTemp 4, 0
-    assignStringVar 16387 16391 4
-    print 16387
+    readlnA1 16387
+    readlnA3P3 16389 16642
+    createCharTemp '"' 2
+    charToStr 2 16646
+    print 16646
+    print 16642
+    createCharTemp '"' 3
+    charToStr 3 16648
+    print 16648
     print 16384
 
     MOV AH, 4CH ; Exit
