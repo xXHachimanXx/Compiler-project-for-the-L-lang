@@ -1258,6 +1258,8 @@ class Parser {
 
         if (currentToken.type != TokenType.SEMICOLON)
             init = parseCommaSeparatedStatements();
+
+        this.codegen.doForA1();
         eat(TokenType.SEMICOLON);
 
         condition = parseExpression();
@@ -1265,16 +1267,21 @@ class Parser {
         if(this.semantic.getExpressionType(condition) != TokenType.BOOLEAN){
             SemanticErros.incompatibleTypes(lexer.line);
         }
+        this.codegen.doForA2(condition.end);
 
         eat(TokenType.SEMICOLON);
 
         if (currentToken.type != TokenType.RIGHT_PAREN)
             inc = parseCommaSeparatedStatements();
 
+        this.codegen.doForA3();
         eat(TokenType.RIGHT_PAREN);
+
         ForStatementNode node = new ForStatementNode(
                 init, condition, inc, parseStatementOrStatements()
         );
+
+        this.codegen.doForA4();
         return node;
     }
 
@@ -1969,6 +1976,48 @@ class CodeGenerator {
         """, "R"+(this.labelCounter-1) ));
     }
 
+    public void doForA1() {
+        newLabel(); // RotInicio
+        newLabel(); // RotIncremento
+        newLabel(); // RotComandos
+        newLabel(); // RotFim
+
+        addCode(String.format(
+        """
+        %s:
+        """, "R"+(this.labelCounter-3) ));
+    }
+
+    public void doForA2(int exprAddr) {
+        addCode(String.format(
+        """
+        mov al, ds:[%d] ; Traz o booleano da memória
+        mov ah, 0 ; Limpa possível lixo em AH
+        cmp ax, 0 ; Compara o valor booleano com 0
+        je %s
+        jmp %s
+        %s:
+        """, exprAddr, "R"+(this.labelCounter), "R"+(this.labelCounter-1), "R"+(this.labelCounter-2) ));
+    }
+
+    public void doForA3() {
+
+        addCode(String.format(
+        """
+        jmp %s
+        %s:
+        """, "R"+(this.labelCounter-3), "R"+(this.labelCounter-1) ));
+    }
+
+    public void doForA4() {
+
+        addCode(String.format(
+        """
+        jmp %s
+        %s:
+        """, "R"+(this.labelCounter-2), "R"+(this.labelCounter) ));
+    }
+
 
     public void write(int addr) {
         addCode(String.format("print %d", addr));
@@ -2012,7 +2061,7 @@ class CodeGenerator {
         int size = ParserUtils.getTypeSize(s.type, s.size);
         s.address = address;
         address += size; 
-        
+
         if (s.size > 0) {
             if (s.type == TokenType.INT)
                 addData(String.format("%s dw %d DUP(?)", s.name, s.size));
