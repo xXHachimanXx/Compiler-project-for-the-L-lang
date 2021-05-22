@@ -493,15 +493,23 @@ readlnA3P3 macro globalCounterAddr, idAddr
         mov ds:[si], bl
 endm
 
+ifA1 macro exprAddr
+    mov al, ds:[EXPRESSION.end] ; Traz o booleano da memÃ³ria
+    mov ah, 0 ; Limpa possÃ­vel lixo em AH
+    cmp ax, 0 ; Compara o valor booleano com 0
+    je RotFalso
+endm
+
 ; --------------- DATA SEGMENT
 
 data segment
     db 4000h DUP(64)
     db 13, 10, '$'
     db 255 DUP(?)
-    a db 4 DUP(?)
-    db "0", '$'
-    db "0", '$'
+    a dw 0
+    db "then", '$'
+    db "else", '$'
+    db "else", '$'
 data ends
 
 ; --------------- CODE
@@ -512,17 +520,24 @@ start:
     MOV AX, data
     MOV DS, AX
 
-    createIntTemp 4, 0
-    readlnA1 16387
-    readlnA3P3 16389 16642
-    createCharTemp '"' 2
-    charToStr 2 16646
-    print 16646
-    print 16642
-    createCharTemp '"' 3
-    charToStr 3 16648
-    print 16648
+    createIntTemp 10, 0
+    assignVar 16642 0
+    createIntTemp 20, 2
+    relEquals 16642 2 4
+    mov al, ds:[4] ; Traz o booleano da memória
+    mov ah, 0 ; Limpa possível lixo em AH
+    cmp ax, 0 ; Compara o valor booleano com 0
+    je R1
+
+    print 16644
     print 16384
+    jmp R2
+    R1:
+
+    print 16649
+    print 16654
+    R2:
+
 
     MOV AH, 4CH ; Exit
     INT 21H

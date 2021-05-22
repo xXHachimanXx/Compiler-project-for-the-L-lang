@@ -1,6 +1,13 @@
-char a[4];
+int a;
 
 main {
-    readln(a);
-    writeln('"', a, '"');
+    a := 10;
+    
+    if(a = 20) then {
+        writeln("then");
+    }
+    else {
+        write("else");
+    }
+    
 }

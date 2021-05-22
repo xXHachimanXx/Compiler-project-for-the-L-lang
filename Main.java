@@ -1148,13 +1148,21 @@ class Parser {
             SemanticErros.incompatibleTypes(lexer.line);
         }
 
+        this.codegen.doIfA1(expression.end);
+
         eat(TokenType.RIGHT_PAREN);
         eat(TokenType.THEN);
         StatementNode ifStatement = parseStatementOrStatements();
         StatementNode elseStatement = null;
+
         if (currentToken.type == TokenType.ELSE) {
+            this.codegen.doIfA2();
             eat();
             elseStatement = parseStatementOrStatements();
+            this.codegen.doIfA3();
+        }
+        else {
+            this.codegen.doIfA4();
         }
         IfStatementNode node = new IfStatementNode(expression, ifStatement, elseStatement);
         return node;
@@ -1700,7 +1708,8 @@ class CodeGenerator {
     int temp = 0; // Adress of the last temporary value relatively to DS register
     int newLineTemp = -1;
     int readlnBuffer = -1;
-    long label = 0;
+    long labelCounter = 0;
+    String currentLabel = "R0";
 
     public CodeGenerator() {
         newLineTemp = address;
@@ -1713,8 +1722,10 @@ class CodeGenerator {
     }
 
     public void newLabel() {
-        ++this.label;
+        ++this.labelCounter;
+        this.currentLabel = "R"+labelCounter;
     }
+
     private void addData(String line) {
         dataSection.add("    " + line);
     }
@@ -1924,6 +1935,41 @@ class CodeGenerator {
         }
     }
 
+    public void doIfA1(int exprAddr) {
+        newLabel();
+        addCode(String.format(
+        """ 
+        mov al, ds:[%d] ; Traz o booleano da memória
+            mov ah, 0 ; Limpa possível lixo em AH
+            cmp ax, 0 ; Compara o valor booleano com 0
+            je %s
+        """, exprAddr, this.currentLabel));
+    }
+
+    public void doIfA2() {
+        newLabel();
+        addCode(String.format(
+        """
+        jmp %s
+            %s:
+        """, this.currentLabel, "R"+(this.labelCounter-1) ));
+    }
+
+    public void doIfA3() {
+        addCode(String.format(
+        """
+        %s:
+        """, this.currentLabel ));
+    }
+
+    public void doIfA4() {
+        addCode(String.format(
+        """
+        %s:
+        """, "R"+(this.labelCounter-1) ));
+    }
+
+
     public void write(int addr) {
         addCode(String.format("print %d", addr));
     }
@@ -1965,7 +2011,8 @@ class CodeGenerator {
     public void declSymbol(Symbol s) {
         int size = ParserUtils.getTypeSize(s.type, s.size);
         s.address = address;
-        address += size-1; // gambs
+        address += size; 
+        
         if (s.size > 0) {
             if (s.type == TokenType.INT)
                 addData(String.format("%s dw %d DUP(?)", s.name, s.size));
