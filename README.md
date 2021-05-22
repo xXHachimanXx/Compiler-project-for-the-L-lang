@@ -547,6 +547,7 @@ EXPRESSION ::= RELATIONAL_EXPRESSION
     int 21h
 }
 {2} {
+    se EXPRESSION.tipo != inteiro entao ERRO
     se tabela.get(IDENTIFIER.lex).tipo = inteiro entao {
         mov di, contador_global_endereco + 2 ;posição do string
         mov ax, 0 ;acumulador
@@ -580,18 +581,15 @@ EXPRESSION ::= RELATIONAL_EXPRESSION
         imul cx ;mult. sinal
 
         mov bx, ds:[EXPRESSION.end]
-        se IDENTIFIER.tipo = inteiro entao {
-            add bx, bx
-        }
+        add bx, bx
+        
         add bx, IDENTIFIER.end
         mov ds:[bx], ax
     }
     senao se tabela.get(IDENTIFIER.lex).tipo = caractere entao {
         mov al, ds:[contador_global_endereco + 2] ; tras o caractere do buffer para al
         mov bx, ds:[EXPRESSION.end]
-        se IDENTIFIER.tipo = inteiro entao {
-            add bx, bx
-        }
+        
         add bx, IDENTIFIER.end
         mov ds:[bx], al
     }
