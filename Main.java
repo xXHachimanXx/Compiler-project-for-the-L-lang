@@ -6,6 +6,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map.Entry;
+
 import java.io.InputStreamReader;
 
 enum TokenType {
@@ -1104,18 +1105,29 @@ class Parser {
 
         if(s.symbolClass == SymbolClass.CONST)
             SemanticErros.changeConst(identifier, lexer.line);
+        
+        // VERIFICAR
+        if(s.size > 0 && s.type != TokenType.STRING) 
+            SemanticErros.incompatibleTypes(lexer.line);
+
+        this.codegen.doReadlnA1();
 
         eat(TokenType.IDENTIFIER);
         if (currentToken.type == TokenType.LEFT_BRACKET) {
             eat();
             ExpressionNode expression = parseExpression();
             node = new ReadlnArrayStatementNode(identifier, expression);
+            this.codegen.doReadlnA2(s, codegen.address, expression.end);
             eat(TokenType.RIGHT_BRACKET);
-        } else {
+        } 
+        
+        else {
             node = new ReadlnVarStatementNode(identifier);
 
             if(s.type != TokenType.STRING && ParserUtils.isVet(s))
                 SemanticErros.incompatibleTypes(lexer.line);
+
+            this.codegen.doReadlnA3(s, codegen.address);
         }
         eat(TokenType.RIGHT_PAREN);
         return node;
@@ -1678,6 +1690,7 @@ class CodeGenerator {
     int address = 16384; // Next variable address relatively to DS register
     int temp = 0; // Adress of the last temporary value relatively to DS register
     int newLineTemp = -1;
+    long label = 0;
 
     public CodeGenerator() {
         newLineTemp = address;
@@ -1685,6 +1698,9 @@ class CodeGenerator {
         address += 3;
     }
 
+    public void newLabel() {
+        ++this.label;
+    }
     private void addData(String line) {
         dataSection.add("    " + line);
     }
@@ -1864,6 +1880,34 @@ class CodeGenerator {
         }
 
         return addr;
+    }
+
+    public void doReadlnA1() {
+        addCode(String.format("readlnA1 %d", address));
+    }
+
+    public void doReadlnA2(Symbol identifierSymbol, int addr, int exprAddr) {
+        if(identifierSymbol.type == TokenType.INT) {
+            addCode(String.format("readlnA2P1 %d %d %d", temp+2, identifierSymbol.address, exprAddr));
+        }
+
+        else if(identifierSymbol.type == TokenType.CHAR) {
+            addCode(String.format("readlnA2P2 %d %d %d", temp+2, identifierSymbol.address, exprAddr));
+        }
+    }
+
+    public void doReadlnA3(Symbol identifierSymbol, int addr) {
+        if (identifierSymbol.type == TokenType.INT) {
+            addCode(String.format("readlnA3P1 %d %d", temp+2, identifierSymbol.address));
+        }
+
+        else if(identifierSymbol.type == TokenType.CHAR) {
+            addCode(String.format("readlnA3P2 %d %d", temp+2, identifierSymbol.address));
+        }
+
+        else if(identifierSymbol.type == TokenType.STRING) {
+            addCode(String.format("readlnA3P3 %d %d", temp+2, identifierSymbol.address));
+        }
     }
 
     public void write(int addr) {

@@ -366,13 +366,142 @@ charToStr macro ptr, strPtr
     mov ds:[strPtr], al ; Coloca na string
 endm
 
+readlnA1 macro globalCounterAddr
+    db 255 DUP(?) ; cria o buffer
+
+    mov dx, globalCounterAddr
+    mov al, 0FFh ;ou tam do vetor
+    mov ds:[globalCounterAddr], al
+    mov ah, 0Ah
+    int 21h ; le os caracteres
+
+    mov ah, 02h ; gera a quebra de linha
+    mov dl, 0Dh
+    int 21h
+    mov DL, 0Ah
+    int 21h
+endm
+
+readlnA2P1 macro globalCounterAddr, idAddr, exprAddr
+    LOCAL R0, R1, R2
+
+    mov di,  + 2 ;posição do string
+    mov ax, 0 ;acumulador
+    mov cx, 10 ;base decimal
+    mov dx, 1 ;valor sinal +
+    mov bh, 0
+    mov bl, ds:[di] ;caractere
+    cmp bx, 2Dh ;verifica sinal -
+    
+    jne R0 ;se não negativo
+    mov dx, -1 ;valor sinal -
+    add di, 1 ;incrementa posição
+    mov bl, ds:[di] ;próximo caractere
+    R0:
+    push dx ;empilha sinal
+    mov dx, 0 ;reg. multiplicação
+    
+    R1:
+    cmp bx, 0dh ;verifica fim string ('\r')
+    
+    je R2 ;salta se fim string
+    imul cx ;mult. 10
+    add bx, -48 ;converte caractere para inteiro
+    add ax, bx ;soma valor caractere
+    add di, 1 ;incrementa posição
+    mov bh, 0
+    mov bl, ds:[di] ;próximo caractere
+    jmp R1 ;loop
+    R2:
+    pop cx ;desempilha sinal
+    imul cx ;mult. sinal
+
+    mov bx, ds:[exprAddr]
+    add bx, bx
+    
+    add bx, idAddr
+    mov ds:[bx], ax
+
+endm
+
+readlnA2P2 macro globalCounterAddr, idAddr, exprAddr
+    mov al, ds:[globalCounterAddr] ; tras o caractere do buffer para al
+    mov bx, ds:[exprAddr]
+    add bx, idAddr
+    mov ds:[bx], al
+endm
+
+readlnA3P1 macro globalCounterAddr, idAddr
+    LOCAL R0, R1, R2
+
+    mov di, globalCounterAddr ;posição do string
+    mov ax, 0 ;acumulador
+    mov cx, 10 ;base decimal
+    mov dx, 1 ;valor sinal +
+    mov bh, 0
+    mov bl, ds:[di] ;caractere
+    cmp bx, 2Dh ;verifica sinal -
+    
+    jne R0 ;se não negativo
+    mov dx, -1 ;valor sinal -
+    add di, 1 ;incrementa posição
+    mov bl, ds:[di] ;próximo caractere
+    R0:
+    push dx ;empilha sinal
+    mov dx, 0 ;reg. multiplicação
+    
+    R1:
+    cmp bx, 0dh ;verifica fim string ('\r')
+    
+    je R2 ;salta se fim string
+    imul cx ;mult. 10
+    add bx, -48 ;converte caractere para inteiro
+    add ax, bx ;soma valor caractere
+    add di, 1 ;incrementa posição
+    mov bh, 0
+    mov bl, ds:[di] ;próximo caractere
+    jmp R1 ;loop
+    
+    R2:
+    pop cx ;desempilha sinal
+    imul cx ;mult. sinal
+
+    mov ds:[idAddr], ax
+endm
+
+readlnA3P2 macro globalCounterAddr, idAddr
+    mov al, ds:[globalCounterAddr] ; tras o caractere do buffer para al
+    mov ds:[idAddr], al
+endm
+
+readlnA3P3 macro globalCounterAddr, idAddr
+    LOCAL RotInicio, RotFim
+
+    mov di, contador_global_endereco + 2 ;posição do string
+    mov si, idAddr
+    
+    RotInicio:
+        mov bl, ds:[di] ; tras o caractere do buffer para bl
+        mov bh, 0
+        cmp bx, 0dh ;verifica fim string ('\r')
+        je RotFim
+        mov ds:[si], bl
+        inc di
+        inc si
+        jmp RotInicio
+
+    RotFim:
+        mov bl, '$'
+        mov ds:[si], bl
+endm
+
 ; --------------- DATA SEGMENT
 
 data segment
     db 4000h DUP(64)
     db 13, 10, '$'
-    c db 5 DUP(?)
-    db "12345678", '$'
+    a db 4 DUP(?)
+    db "abc", '$'
 data ends
 
 ; --------------- CODE
@@ -383,8 +512,8 @@ start:
     MOV AX, data
     MOV DS, AX
 
-    createIntTemp 5, 0
-    assignStringVar 16387 16392 5
+    createIntTemp 4, 0
+    assignStringVar 16387 16391 4
     print 16387
     print 16384
 
