@@ -445,6 +445,7 @@ abstract class StatementNode extends Node {
 
 abstract class ExpressionNode extends Node {
     int end;
+    int tam;
 }
 
 class BooleanExpressionNode extends ExpressionNode {
@@ -746,6 +747,7 @@ class Parser {
                 boolean bvalue = currentToken.value.equals("TRUE");
                 node = new BooleanExpressionNode(bvalue);
                 node.end = this.codegen.createBoolTemp(bvalue);
+                node.tam = 0;
                 eat();
                 break;
 
@@ -753,6 +755,7 @@ class Parser {
                 char cvalue = currentToken.value.charAt(0);
                 node = new CharExpressionNode(cvalue);
                 node.end = this.codegen.createCharTemp(cvalue);
+                node.tam = 0;
                 eat();
                 break;
 
@@ -761,6 +764,7 @@ class Parser {
                 char hcvalue = (char) Integer.parseInt(hexStr, 16);
                 node = new CharExpressionNode(hcvalue);
                 node.end = this.codegen.createCharTemp(hcvalue);
+                node.tam = 0;
                 eat();
                 break;
 
@@ -768,12 +772,14 @@ class Parser {
                 int ivalue = Integer.parseInt(currentToken.value);
                 node = new IntExpressionNode(ivalue);
                 node.end = this.codegen.createIntTemp(ivalue);
+                node.tam = 0;
                 eat();
                 break;
 
             case STRING:
                 node = new StringExpressionNode(currentToken.value);
                 node.end = this.codegen.createStrTemp(currentToken.value);
+                node.tam = currentToken.value.length();
                 eat();
                 break;
         }
@@ -790,7 +796,8 @@ class Parser {
                 //Semantic Action
                 this.semantic.verifyUnaryOperator(
                     operator,
-                    this.semantic.getExpressionType(node)
+                    this.semantic.getExpressionType(node),
+                    node.tam
                 );
                 break;
             case MINUS:
@@ -799,7 +806,8 @@ class Parser {
                 //Semantic Action
                 this.semantic.verifyUnaryOperator(
                     operator,
-                    this.semantic.getExpressionType(node)
+                    this.semantic.getExpressionType(node),
+                    node.tam
                 );
                 ((IntExpressionNode) node).value *= -1;
                 break;
@@ -832,16 +840,14 @@ class Parser {
                     eat(TokenType.RIGHT_BRACKET);
                 }else{
                     Symbol s = this.semantic.getDeclaredSymbol(identifier);
-
-                    //gambs  (a)
-                    if(s.size > 0 && !currentToken.value.equals(")") && !currentToken.value.equals(",")){
-                        SemanticErros.incompatibleTypes(lexer.line);
-                    }
                 }
 
                 if (subscriptExpr == null) {
                     node = new IdentifierExpressionNode(identifier);
-                    node.end = this.semantic.getDeclaredSymbol(identifier).address;
+
+                    Symbol s = this.semantic.getDeclaredSymbol(identifier);
+                    node.end = s.address;
+                    node.tam = s.size;
                 } else {
                     node = new ArraySubscriptExpressionNode(identifier, subscriptExpr);
                     //Comentado por enquanto, não tem mensagem no tp pra isso
@@ -851,6 +857,7 @@ class Parser {
                         this.semantic.getDeclaredSymbol(identifier),
                         subscriptExpr.end
                     );
+                    node.tam = 0;
                 }
                 break;
 
@@ -871,7 +878,8 @@ class Parser {
                 //Semantic Action
                 this.semantic.verifyUnaryOperator(
                     operator,
-                    this.semantic.getExpressionType(notOperand)
+                    this.semantic.getExpressionType(notOperand),
+                    node.tam
                 );
                 break;
             case PLUS:
@@ -882,7 +890,8 @@ class Parser {
                 //Semantic Action
                 this.semantic.verifyUnaryOperator(
                     operator,
-                    this.semantic.getExpressionType(plusOperand)
+                    this.semantic.getExpressionType(plusOperand),
+                    node.tam
                 );
                 break;
             case MINUS:
@@ -893,7 +902,8 @@ class Parser {
                 //Semantic Action
                 this.semantic.verifyUnaryOperator(
                     operator,
-                    this.semantic.getExpressionType(minusOperand)
+                    this.semantic.getExpressionType(minusOperand),
+                    node.tam
                 );
                 break;
         }
@@ -1065,10 +1075,19 @@ class Parser {
         eat(TokenType.LEFT_PAREN);
         ExpressionNode expr = parseExpression();
         node.args.add(expr);
+
+        if(expr.tam > 0 && this.semantic.getExpressionType(expr) != TokenType.STRING){
+            SemanticErros.incompatibleTypes(lexer.line);
+        }
         this.codegen.writeExpression(expr.end, this.semantic.getExpressionType(expr));
+
         while (currentToken.type == TokenType.COMMA) {
             eat(TokenType.COMMA);
             expr = parseExpression();
+
+            if(expr.tam > 0 && this.semantic.getExpressionType(expr) != TokenType.STRING){
+                SemanticErros.incompatibleTypes(lexer.line);
+            }
             node.args.add(expr);
             this.codegen.writeExpression(expr.end, this.semantic.getExpressionType(expr));
         }
@@ -1081,12 +1100,22 @@ class Parser {
         eat(TokenType.LEFT_PAREN);
 
         ExpressionNode expr = parseExpression();
+
+        if(expr.tam > 0 && this.semantic.getExpressionType(expr) != TokenType.STRING){
+            SemanticErros.incompatibleTypes(lexer.line);
+        }
+
         node.args.add(expr);
+
         this.codegen.writeExpression(expr.end, this.semantic.getExpressionType(expr));
 
         while (currentToken.type == TokenType.COMMA) {
             eat(TokenType.COMMA);
             expr = parseExpression();
+
+            if(expr.tam > 0 && this.semantic.getExpressionType(expr) != TokenType.STRING){
+                SemanticErros.incompatibleTypes(lexer.line);
+            }
             node.args.add(expr);
             this.codegen.writeExpression(expr.end, this.semantic.getExpressionType(expr));
         }
@@ -1106,8 +1135,7 @@ class Parser {
 
         if(s.symbolClass == SymbolClass.CONST)
             SemanticErros.changeConst(identifier, lexer.line);
-        
-        // VERIFICAR
+
         if(s.size > 0 && s.type != TokenType.STRING) 
             SemanticErros.incompatibleTypes(lexer.line);
 
@@ -1120,7 +1148,7 @@ class Parser {
             ExpressionNode expression = parseExpression();
             node = new ReadlnArrayStatementNode(identifier, expression);
 
-            if(this.semantic.getExpressionType(expression) != TokenType.INT) {
+            if(this.semantic.getExpressionType(expression) != TokenType.INT || expression.tam > 0) {
                 SemanticErros.incompatibleTypes(lexer.line);
             }
             this.codegen.doReadlnA2(s, expression.end);
@@ -1144,7 +1172,7 @@ class Parser {
         eat(TokenType.LEFT_PAREN);
         ExpressionNode expression = parseExpression();
 
-        if(this.semantic.getExpressionType(expression) != TokenType.BOOLEAN){
+        if(expression.tam > 0 || this.semantic.getExpressionType(expression) != TokenType.BOOLEAN){
             SemanticErros.incompatibleTypes(lexer.line);
         }
 
@@ -1264,7 +1292,7 @@ class Parser {
 
         condition = parseExpression();
 
-        if(this.semantic.getExpressionType(condition) != TokenType.BOOLEAN){
+        if(this.semantic.getExpressionType(condition) != TokenType.BOOLEAN || condition.tam > 0 ){
             SemanticErros.incompatibleTypes(lexer.line);
         }
         this.codegen.doForA2(condition.end);
@@ -1481,7 +1509,7 @@ class Semantic{
         }
         else if(node instanceof UnaryExpressionNode){
             tokenType = getExpressionType(((UnaryExpressionNode) node).expression);
-            verifyUnaryOperator(((UnaryExpressionNode) node).operator, tokenType);
+            verifyUnaryOperator(((UnaryExpressionNode) node).operator, tokenType, ((UnaryExpressionNode) node).tam);
         }
         else if(node instanceof BinaryExpressionNode){
             tokenTypeLeft = getExpressionType(((BinaryExpressionNode) node).leftExpression);
@@ -1585,13 +1613,16 @@ class Semantic{
         }
     }
 
-    public void verifyUnaryOperator(String operator, TokenType tokenTypeRight){
+    public void verifyUnaryOperator(String operator, TokenType tokenTypeRight, int tam){
         if(operator.equals("not") && tokenTypeRight != TokenType.BOOLEAN)
         {
             SemanticErros.incompatibleTypes(lexer.line);
         }
         if((operator.equals("+") || operator.equals("-")) && (tokenTypeRight != TokenType.INT))
         {
+            SemanticErros.incompatibleTypes(lexer.line);
+        }
+        if(tam > 0){
             SemanticErros.incompatibleTypes(lexer.line);
         }
     }
