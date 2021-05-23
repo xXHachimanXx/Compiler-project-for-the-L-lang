@@ -481,6 +481,7 @@ class ParenthesizedExpressionNode extends ExpressionNode {
     ParenthesizedExpressionNode(ExpressionNode expression) {
         this.expression = expression;
         this.end = expression.end;
+        this.tam = expression.tam;
     }
 }
 
@@ -832,14 +833,20 @@ class Parser {
 
                 if (currentToken.type == TokenType.LEFT_BRACKET) {
                     Symbol s = this.semantic.getDeclaredSymbol(identifier);
+
                     if(!ParserUtils.isVet(s))
                         SemanticErros.incompatibleTypes(lexer.line);
-
+                    
                     eat(TokenType.LEFT_BRACKET);
                     subscriptExpr = parseExpression();
+
+                    if(
+                        this.semantic.getExpressionType(subscriptExpr) != TokenType.INT ||
+                        subscriptExpr.tam > 0
+                    )
+                        SemanticErros.incompatibleTypes(lexer.line);
+
                     eat(TokenType.RIGHT_BRACKET);
-                }else{
-                    Symbol s = this.semantic.getDeclaredSymbol(identifier);
                 }
 
                 if (subscriptExpr == null) {
@@ -875,36 +882,47 @@ class Parser {
                 ExpressionNode notOperand = parseUnaryExpression();
                 node = new UnaryExpressionNode(operator, notOperand);
                 node.end = this.codegen.negate(notOperand.end);
+
                 //Semantic Action
                 this.semantic.verifyUnaryOperator(
                     operator,
                     this.semantic.getExpressionType(notOperand),
                     node.tam
                 );
+                node.tam = notOperand.tam;
+
                 break;
+
             case PLUS:
                 eat();
                 ExpressionNode plusOperand = parseUnaryExpression();
                 node = new UnaryExpressionNode(operator, plusOperand);
                 node.end = plusOperand.end;
+
                 //Semantic Action
                 this.semantic.verifyUnaryOperator(
                     operator,
                     this.semantic.getExpressionType(plusOperand),
                     node.tam
                 );
+                node.tam = plusOperand.tam;
+
                 break;
+
             case MINUS:
                 eat();
                 ExpressionNode minusOperand = parseUnaryExpression();
                 node = new UnaryExpressionNode(operator, minusOperand);
                 node.end = this.codegen.unaryMinus(minusOperand.end);
+                
                 //Semantic Action
                 this.semantic.verifyUnaryOperator(
                     operator,
                     this.semantic.getExpressionType(minusOperand),
                     node.tam
                 );
+                node.tam = minusOperand.tam;
+
                 break;
         }
         return node == null ? parsePrimaryExpression() : node;
@@ -912,6 +930,7 @@ class Parser {
 
     ExpressionNode parseMultiplicativeExpression() throws IOException {
         ExpressionNode node = parseUnaryExpression();
+
         while (
                 currentToken.type == TokenType.ASTERISK
                         || currentToken.type == TokenType.BACKSLASH
@@ -921,9 +940,16 @@ class Parser {
             String operator = currentToken.value;
             eat();
 
-            node = new BinaryExpressionNode(node, operator, parseUnaryExpression());
+            if(node.tam > 0)
+                SemanticErros.incompatibleTypes(lexer.line);
+            
+            ExpressionNode unaryExpression1 = parseUnaryExpression();
+            if(unaryExpression1.tam > 0)
+                SemanticErros.incompatibleTypes(lexer.line);
+            
+            node = new BinaryExpressionNode(node, operator, unaryExpression1);
             BinaryExpressionNode binaryNode = (BinaryExpressionNode) node;
-
+        
             this.semantic.verifyTypeCompability((BinaryExpressionNode)node); //Semantic ACtion
 
             node.end = this.codegen.doMultiplicativeExpression(
@@ -944,7 +970,14 @@ class Parser {
             String operator = currentToken.value;
             eat();
 
-            node = new BinaryExpressionNode(node, operator, parseMultiplicativeExpression());
+            if(node.tam > 0)
+                SemanticErros.incompatibleTypes(lexer.line);
+            
+            ExpressionNode multiplicativeExpression1 = parseMultiplicativeExpression();
+            if(multiplicativeExpression1.tam > 0)
+                SemanticErros.incompatibleTypes(lexer.line);
+
+            node = new BinaryExpressionNode(node, operator, multiplicativeExpression1);
             BinaryExpressionNode binaryNode = (BinaryExpressionNode) node;
 
             this.semantic.verifyTypeCompability(binaryNode); //Semantic Action
@@ -969,7 +1002,15 @@ class Parser {
             String operator = currentToken.value;
             eat();
 
-            node = new BinaryExpressionNode(node, operator, parseAdditiveExpression());
+            ExpressionNode additiveExpression1 = parseAdditiveExpression();
+
+            if(!(node.tam > 0 && operator.equals("=") && 
+                this.semantic.getExpressionType(node) == TokenType.STRING &&
+                this.semantic.getExpressionType(additiveExpression1) == TokenType.STRING)
+            )
+                SemanticErros.incompatibleTypes(lexer.line);
+
+            node = new BinaryExpressionNode(node, operator, additiveExpression1);
 
             BinaryExpressionNode binaryNode = (BinaryExpressionNode) node;
             this.semantic.verifyTypeCompability(binaryNode); //Semantic Action
@@ -984,7 +1025,6 @@ class Parser {
 
     ExpressionNode parseExpression() throws IOException {
         ExpressionNode node = parseRelationalExpression();
-        // System.out.println(node.getClass().getName());
         return node;
     }
 
@@ -1223,7 +1263,14 @@ class Parser {
         eat(TokenType.ASSIGN);
 
         if (subscriptExpr == null) {
-            node = new IdentifierAssignStatementNode(identifier, parseExpression());
+            ExpressionNode expression1 = parseExpression();
+
+            if(identifierSymbol.type != this.semantic.getExpressionType(expression1) ||
+               (identifierSymbol.size > 0 && this.semantic.getExpressionType(expression1) != TokenType.STRING)
+            )
+                SemanticErros.incompatibleTypes(lexer.line);
+
+            node = new IdentifierAssignStatementNode(identifier, expression1);
 
             if(identifierSymbol.type == TokenType.STRING && this.semantic.getExpressionType(node.value) != TokenType.STRING){
                 SemanticErros.incompatibleTypes(lexer.line);

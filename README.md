@@ -1215,7 +1215,6 @@ EXPRESSION ::= RELATIONAL_EXPRESSION
     mov ds:[PRIMARY_EXPRESSION.end], bx
 }
 {4} {
-    se tabela.get(IDENTIFIER.lex).tamanho > 0 entao ERRO
     PRIMARY_EXPRESSION.tamanho = IDENTIFIER.tamanho
 }
 </pre>
