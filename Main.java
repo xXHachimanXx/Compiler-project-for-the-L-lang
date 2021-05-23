@@ -1209,13 +1209,13 @@ class Parser {
         if (currentToken.type == TokenType.LEFT_BRACKET) {
             eat();
             
-            // if(identifierSymbol.size == 0) 
-            //   System.out.print("System.out.print("ALGUM ERRO AQUI");
+            if(identifierSymbol.size == 0) 
+                SemanticErros.incompatibleTypes(lexer.line);
 
             subscriptExpr = parseExpression();
 
-            // if(subscriptExpr.type != TokenType.INTEGER || subscriptExpr.type != TokenType.INT) 
-            //   System.out.print("ALGUM ERRO AQUI");
+            if(this.semantic.getExpressionType(subscriptExpr) != TokenType.INT || subscriptExpr.tam > 0) 
+                SemanticErros.incompatibleTypes(lexer.line);
             
             eat(TokenType.RIGHT_BRACKET);
         } 
