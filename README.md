@@ -218,6 +218,7 @@ EXPRESSION ::= RELATIONAL_EXPRESSION
 
 <b>WRITE_STATEMENT -> 'write' '(' EXPRESSION {1} {',' EXPRESSION1 {2}}* ')'</b>
 {1} {
+    se EXPRESSION.tamanho > 0 e EXPRESSION.tipo != string entao ERRO
     se EXPRESSION.tipo = inteiro entao {
         db "-00000", '$' ; Cria uma string na área de dados para 
         mov ax, ds:[EXPRESSION.end] ; Traz o inteiro para ax
@@ -293,6 +294,7 @@ EXPRESSION ::= RELATIONAL_EXPRESSION
     }
 }
 {2} {
+    se EXPRESSION1.tamanho > 0 e EXPRESSION1.tipo != string entao ERRO
     se EXPRESSION1.tipo = inteiro entao {
         db "-00000", '$'
         mov ax, ds:[EXPRESSION1.end] ; Traz o inteiro para ax
@@ -370,6 +372,7 @@ EXPRESSION ::= RELATIONAL_EXPRESSION
 
 <b>WRITELN_STATEMENT -> 'writeln' '(' EXPRESSION {1} {',' EXPRESSION1 {2}}* ')' {3}</b>
 {1} {
+    se EXPRESSION.tamanho > 0 e EXPRESSION.tipo != string entao ERRO
     se EXPRESSION.tipo = inteiro entao {
         db "-00000", '$'
         mov ax, ds:[EXPRESSION.end] ; Traz o inteiro para ax
@@ -445,6 +448,7 @@ EXPRESSION ::= RELATIONAL_EXPRESSION
     }
 }
 {2} {
+    se EXPRESSION1.tamanho > 0 e EXPRESSION1.tipo != string entao ERRO
     se EXPRESSION1.tipo = inteiro entao {
         db "-00000", '$'
         mov ax, ds:[EXPRESSION1.end] ; Traz o inteiro para ax
@@ -547,7 +551,7 @@ EXPRESSION ::= RELATIONAL_EXPRESSION
     int 21h
 }
 {2} {
-    se EXPRESSION.tipo != inteiro entao ERRO
+    se EXPRESSION.tipo != inteiro ou EXPRESSION.tamanho > 0 entao ERRO
     se tabela.get(IDENTIFIER.lex).tipo = inteiro entao {
         mov di, contador_global_endereco + 2 ;posição do string
         mov ax, 0 ;acumulador
@@ -656,7 +660,7 @@ EXPRESSION ::= RELATIONAL_EXPRESSION
 
 <b>IF_STATEMENT -> 'if' '(' EXPRESSION {1} ')' 'then' STATEMENT_OR_STATEMENTS ( 'else' {2} STATEMENT_OR_STATEMENTS {3} | lambda {4} )</b>
 {1} {
-    se EXPRESSION.tipo != booleano entao ERRO
+    se EXPRESSION.tipo != booleano ou EXPRESSION.tamanho > 0 entao ERRO
     RotFalso := NovoRot
     mov al, ds:[EXPRESSION.end] ; Traz o booleano da memória
     mov ah, 0 ; Limpa possível lixo em AH
@@ -684,7 +688,7 @@ EXPRESSION ::= RELATIONAL_EXPRESSION
     RotInicio:
 }
 {2} {
-    se EXPRESSION.tipo != booleano entao ERRO
+    se EXPRESSION.tipo != booleano ou EXPRESSION.tamanho > 0 entao ERRO
     mov al, ds:[EXPRESSION.end] ; Traz o booleano da memória
     mov ah, 0 ; Limpa possível lixo em AH
     cmp ax, 0 ; Compara o valor booleano com 0
@@ -707,6 +711,7 @@ EXPRESSION ::= RELATIONAL_EXPRESSION
 }
 {2} {
     se tabela.get(IDENTIFIER.lex).tipo != EXPRESSION1.tipo entao ERRO
+    se IDENTIFIER.tamanho > 0 e EXPRESSION1.tipo != string entao ERRO
     se IDENTIFIER.tipo = inteiro entao {
         mov ax, ds:[EXPRESSION1.end]
         mov ds:[IDENTIFIER.end], ax
@@ -743,11 +748,11 @@ EXPRESSION ::= RELATIONAL_EXPRESSION
     se tabela.get(IDENTIFIER.lex).tamanho = 0 entao ERRO
 }
 {4} {
-    se EXPRESSION.tipo != inteiro entao ERRO
+    se EXPRESSION.tipo != inteiro ou EXPRESSION.tamanho > 0 entao ERRO
 }
 {5} {
     se tabela.get(IDENTIFIER.lex).tipo != EXPRESSION2.tipo entao ERRO
-    se tabela.get(IDENTIFIER.lex).tipo = string e EXPRESSION2.tipo = string entao ERRO
+    se EXPRESSION2.tamanho > 0 entao ERRO
     mov bx, IDENTIFIER.end ; traz o endereço base do arranjo
     mov si, ds:[EXPRESSION.end] ; traz o índice para si
     se tabela.get(IDENTIFIER.lex).tipo = inteiro entao {
@@ -784,17 +789,26 @@ EXPRESSION ::= RELATIONAL_EXPRESSION
 {1} {
     EXPRESSION.tipo = RELATIONAL_EXPRESSION.tipo
     EXPRESSION.end = RELATIONAL_EXPRESSION.end
+    EXPRESSION.tamanho = RELATIONAL_EXPRESSION.tamanho
 }
 
 <b>RELATIONAL_EXPRESSION -> ADDITIVE_EXPRESSION {1} {('=' | '<>' | '<' | '>' | '<=' | '>=') {2} ADDITIVE_EXPRESSION1 {3}}*</b>
 {1} {
     RELATIONAL_EXPRESSION.tipo = ADDITIVE_EXPRESSION.tipo
     RELATIONAL_EXPRESSION.end = ADDITIVE_EXPRESSION.end
+    RELATIONAL_EXPRESSION.tamanho = ADDITIVE_EXPRESSION.tamanho
 }
 {2} {
     operador = guardar o operador ('=' | '<>' | '<' | '>' | '<=' | '>=') numa variavel
 }
 {3} {
+    se nao(
+        RELATIONAL_EXPRESSION.tamanho > 0
+        e operador = '='
+        e RELATIONAL_EXPRESSION.tipo = string
+        e ADDITIVE_EXPRESSION1.tipo = string
+    ) entao ERRO
+
     se operador = '=' entao {
         se RELATIONAL_EXPRESSION.tipo != ADDITIVE_EXPRESSION1.tipo entao ERRO
         se RELATIONAL_EXPRESSION.tipo = inteiro entao {
@@ -1041,11 +1055,14 @@ EXPRESSION ::= RELATIONAL_EXPRESSION
 {1} {
     ADDITIVE_EXPRESSION.tipo = MULTIPLICATIVE_EXPRESSION.tipo
     ADDITIVE_EXPRESSION.end = MULTIPLICATIVE_EXPRESSION.end
+    ADDITIVE_EXPRESSION.tamanho = MULTIPLICATIVE_EXPRESSION.tamanho
 }
 {2} {
     operador = guardar o operador ('+' | '-' | 'or') numa variavel
 }
 {3} {
+    se ADDITIVE_EXPRESSION.tamanho > 0 entao ERRO
+    se MULTIPLICATIVE_EXPRESSION1.tamanho > 0 entao ERRO
     se operador = '+' entao {
         se ADDITIVE_EXPRESSION.tipo != inteiro ou MULTIPLICATIVE_EXPRESSION1.tipo != inteiro entao ERRO
         mov ax, ds:[ADDITIVE_EXPRESSION.end]
@@ -1075,11 +1092,14 @@ EXPRESSION ::= RELATIONAL_EXPRESSION
 {1} {
     MULTIPLICATIVE_EXPRESSION.tipo = UNARY_EXPRESSION.tipo
     MULTIPLICATIVE_EXPRESSION.end = UNARY_EXPRESSION.end
+    MULTIPLICATIVE_EXPRESSION.tamanho = UNARY_EXPRESSION.tamanho
 }
 {2} {
     operador = guardar o operador ('*' | '/' | '%' | 'and') numa variavel
 }
 {3} {
+    se MULTIPLICATIVE_EXPRESSION.tamanho > 0 entao ERRO
+    se UNARY_EXPRESSION1.tamanho > 0 entao ERRO
     se operador = '*' entao {
         se MULTIPLICATIVE_EXPRESSION.tipo != inteiro ou UNARY_EXPRESSION1.tipo != inteiro entao ERRO
         mov ax, ds:[MULTIPLICATIVE_EXPRESSION.end]
@@ -1119,8 +1139,10 @@ EXPRESSION ::= RELATIONAL_EXPRESSION
 <b>UNARY_EXPRESSION -> 'not' UNARY_EXPRESSION1 {1}</b>
 {1} {
     se UNARY_EXPRESSION1.tipo != booleano entao ERRO
+    se UNARY_EXPRESSION1.tamanho > 0 entao ERRO
     UNARY_EXPRESSION.tipo = UNARY_EXPRESSION1.tipo
     UNARY_EXPRESSION.end = NovoTemp()
+    UNARY_EXPRESSION.tamanho = UNARY_EXPRESSION1.tamanho
     mov ax, ds:[UNARY_EXPRESSION1.end]
     neg ax
     add ax, 1
@@ -1130,15 +1152,19 @@ EXPRESSION ::= RELATIONAL_EXPRESSION
 <b>UNARY_EXPRESSION -> '+' UNARY_EXPRESSION1 {1}</b>
 {1} {
     se UNARY_EXPRESSION1.tipo != inteiro entao ERRO
+    se UNARY_EXPRESSION1.tamanho > 0 entao ERRO
     UNARY_EXPRESSION.tipo = UNARY_EXPRESSION1.tipo
     UNARY_EXPRESSION.end = UNARY_EXPRESSION1.end
+    UNARY_EXPRESSION.tamanho = UNARY_EXPRESSION1.tamanho
 }
 
 <b>UNARY_EXPRESSION -> '-' UNARY_EXPRESSION1 {1}</b>
 {1} {
     se UNARY_EXPRESSION1.tipo != inteiro entao ERRO
+    se UNARY_EXPRESSION1.tamanho > 0 entao ERRO
     UNARY_EXPRESSION.tipo = UNARY_EXPRESSION1.tipo
     UNARY_EXPRESSION.end = NovoTemp()
+    UNARY_EXPRESSION.tamanho = UNARY_EXPRESSION1.tamanho
     mov ax, ds:[UNARY_EXPRESSION1.end]
     neg ax
     mov ds:[UNARY_EXPRESSION.end], ax
@@ -1148,12 +1174,14 @@ EXPRESSION ::= RELATIONAL_EXPRESSION
 {1} {
     UNARY_EXPRESSION.tipo = PRIMARY_EXPRESSION.tipo
     UNARY_EXPRESSION.end = PRIMARY_EXPRESSION.end
+    UNARY_EXPRESSION.tamanho = PRIMARY_EXPRESSION.tamanho
 }
 
 <b>PRIMARY_EXPRESSION -> CONST {1}</b>
 {1} {
     PRIMARY_EXPRESSION.tipo = CONST.tipo
     PRIMARY_EXPRESSION.end = NovoTemp()
+    PRIMARY_EXPRESSION.tamanho = 0
     mov ax, CONST.lex
     mov DS:[PRIMARY_EXPRESSION.end], ax
 }
@@ -1162,6 +1190,7 @@ EXPRESSION ::= RELATIONAL_EXPRESSION
 {1} {
     PRIMARY_EXPRESSION.tipo = EXPRESSION.tipo
     PRIMARY_EXPRESSION.end = EXPRESSION.end
+    PRIMARY_EXPRESSION.tamanho = IDENTIFIER.tamanho
 }
 
 <b>PRIMARY_EXPRESSION -> IDENTIFIER {1} ( '[' {2} EXPRESSION {3} ']' | lambda {4} )</b>
@@ -1172,9 +1201,10 @@ EXPRESSION ::= RELATIONAL_EXPRESSION
 }
 {2} {
     se tabela.get(IDENTIFIER.lex).tamanho = 0 entao ERRO
+    PRIMARY_EXPRESSION.tamanho = 0
 }
 {3} {
-    se EXPRESSION.tipo != inteiro entao ERRO
+    se EXPRESSION.tipo != inteiro ou EXPRESSION.tamanho > 0 entao ERRO
     PRIMARY_EXPRESSION.end = NovoTemp()
     mov bx, ds:[EXPRESSION.end]
     se PRIMARY_EXPRESSION.tipo = inteiro entao {
@@ -1186,6 +1216,7 @@ EXPRESSION ::= RELATIONAL_EXPRESSION
 }
 {4} {
     se tabela.get(IDENTIFIER.lex).tamanho > 0 entao ERRO
+    PRIMARY_EXPRESSION.tamanho = IDENTIFIER.tamanho
 }
 </pre>
 
