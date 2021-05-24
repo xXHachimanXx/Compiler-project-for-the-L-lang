@@ -1817,9 +1817,13 @@ class CodeGenerator {
         address += 255;
     }
 
-    public String newLabel() {
+    public String newLabel(String prefix) {
         ++this.labelCounter;
-        return "R" + labelCounter;
+        return "R" + prefix + labelCounter;
+    }
+
+    public String newLabel() {
+        return newLabel("");
     }
 
     private void addData(String line) {
@@ -1951,7 +1955,10 @@ class CodeGenerator {
                 temp += 1;
                 break;
             case "<>":
-                addCode(String.format("relNotEquals %d %d %d", op1Addr, op2Addr, addr));
+                if (op1Type == TokenType.INT)
+                    addCode(String.format("relNotEquals %d %d %d", op1Addr, op2Addr, addr));
+                else
+                    addCode(String.format("relNotEquals1Byte %d %d %d", op1Addr, op2Addr, addr));
                 temp += 1;
                 break;
             case "<":
@@ -1967,7 +1974,7 @@ class CodeGenerator {
                 temp += 1;
                 break;
             case "<=":
-                addCode(String.format("relGreaterThanOrEqualTo %d %d %d", op1Addr, op2Addr, addr));
+                addCode(String.format("relLessThanOrEqualTo %d %d %d", op1Addr, op2Addr, addr));
                 temp += 1;
                 break;
         }
@@ -2040,13 +2047,17 @@ class CodeGenerator {
     }
 
     public void doIfA1(int exprAddr, String rotFalso) {
+        String rotVerdadeiro = newLabel("_IF");
         addCode(String.format(
         """ 
         mov al, ds:[%d] ; Traz o booleano da memória
             mov ah, 0 ; Limpa possível lixo em AH
             cmp ax, 0 ; Compara o valor booleano com 0
-            je %s
-        """, exprAddr, rotFalso));
+            ;je %s
+            jne %s
+            jmp %s
+            %s:
+        """, exprAddr, rotFalso, rotVerdadeiro, rotFalso, rotVerdadeiro));
     }
 
     public void doIfA2(String rotFalso, String rotFim) {
@@ -2081,15 +2092,19 @@ class CodeGenerator {
     public void doForA2(
         int exprAddr, String rotFim, String rotComandos, String rotIncremento
     ) {
+        String rotVerdadeiro = newLabel("_FOR");
         addCode(String.format(
         """
         mov al, ds:[%d] ; Traz o booleano da memória
         mov ah, 0 ; Limpa possível lixo em AH
         cmp ax, 0 ; Compara o valor booleano com 0
-        je %s
+        ;je %s
+        jne %s
         jmp %s
         %s:
-        """, exprAddr, rotFim, rotComandos, rotIncremento));
+        jmp %s
+        %s:
+        """, exprAddr, rotFim, rotVerdadeiro, rotFim, rotVerdadeiro, rotComandos, rotIncremento));
     }
 
     public void doForA3(String rotInicio, String rotComandos) {

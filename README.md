@@ -1242,3 +1242,4 @@ EXPRESSION ::= RELATIONAL_EXPRESSION
 - [8086 assembler directives & macros](https://www.sakshieducation.com/Story.aspx?nid=93723)
 - [8086 addressing modes](https://www.ic.unicamp.br/~celio/mc404s2-03/addr_modes/intel_addr.html)
 - [8086 Logical Instructions](https://microcontrollerslab.com/8086-logical-instructions-assembly-examples/)
+- [8086 Jump out of range](https://stackoverflow.com/questions/39427980/relative-jump-out-of-range-by)

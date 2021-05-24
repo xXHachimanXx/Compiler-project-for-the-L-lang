@@ -152,6 +152,28 @@ RotFim:
     mov ds:[tempPtr], ax
 endm
 
+; =
+relEquals1Byte macro value1Ptr, value2Ptr, tempPtr
+    LOCAL RotVerdadeiro, RotFim
+    mov al, ds:[value1Ptr]
+    mov bl, ds:[value2Ptr]
+
+    mov ah, 00h
+    mov bh, 00h
+
+    cmp ax, bx
+
+    je RotVerdadeiro
+    mov ax, 00h
+    jmp RotFim
+
+RotVerdadeiro:
+    mov ax, 01h
+
+RotFim:
+    mov ds:[tempPtr], al
+endm
+
 ; <>
 relNotEquals macro value1Ptr, value2Ptr, tempPtr
     LOCAL RotVerdadeiro, RotFim
@@ -172,6 +194,28 @@ RotVerdadeiro:
 
 RotFim:
     mov ds:[tempPtr], ax
+endm
+
+; <>
+relNotEquals1Byte macro value1Ptr, value2Ptr, tempPtr
+    LOCAL RotVerdadeiro, RotFim
+    mov al, ds:[value1Ptr]
+    mov bl, ds:[value2Ptr]
+
+    mov ah, 00h
+    mov bh, 00h
+
+    cmp ax, bx
+
+    jne RotVerdadeiro
+    mov ax, 00h
+    jmp RotFim
+
+RotVerdadeiro:
+    mov ax, 01h
+
+RotFim:
+    mov ds:[tempPtr], al
 endm
 
 ; <
