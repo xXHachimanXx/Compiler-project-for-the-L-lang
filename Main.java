@@ -1589,6 +1589,7 @@ class Semantic{
                 SemanticErros.incompatibleTypes(lexer.line);
 
             tokenType = getDeclaredSymbol(((ArraySubscriptExpressionNode) node).identifier).type;
+            if (tokenType == TokenType.STRING) tokenType = TokenType.CHAR;
         }else if(node instanceof IdentifierExpressionNode){
             Symbol s = getDeclaredSymbol(((IdentifierExpressionNode) node).identifier);
 
