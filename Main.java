@@ -1003,11 +1003,13 @@ class Parser {
             eat();
 
             ExpressionNode additiveExpression1 = parseAdditiveExpression();
+            TokenType nodeType = this.semantic.getExpressionType(node);
+            TokenType additiveType = this.semantic.getExpressionType(additiveExpression1);
 
-            if(!(node.tam > 0 && operator.equals("=") && 
-                this.semantic.getExpressionType(node) == TokenType.STRING &&
-                this.semantic.getExpressionType(additiveExpression1) == TokenType.STRING)
-            )
+            if(operator.equals("=") && node.tam > 0 && !(
+                nodeType == TokenType.STRING &&
+                additiveType == TokenType.STRING
+            ))
                 SemanticErros.incompatibleTypes(lexer.line);
 
             node = new BinaryExpressionNode(node, operator, additiveExpression1);
@@ -1016,7 +1018,8 @@ class Parser {
             this.semantic.verifyTypeCompability(binaryNode); //Semantic Action
 
             node.end = this.codegen.doRelationalExpression(
-                operator, binaryNode.leftExpression.end, binaryNode.rightExpression.end
+                operator, node.end, additiveExpression1.end,
+                nodeType, additiveType
             );
         }
 
@@ -1265,11 +1268,6 @@ class Parser {
         if (subscriptExpr == null) {
             ExpressionNode expression1 = parseExpression();
 
-            if(identifierSymbol.type != this.semantic.getExpressionType(expression1) ||
-               (identifierSymbol.size > 0 && this.semantic.getExpressionType(expression1) != TokenType.STRING)
-            )
-                SemanticErros.incompatibleTypes(lexer.line);
-
             node = new IdentifierAssignStatementNode(identifier, expression1);
 
             if(identifierSymbol.type == TokenType.STRING && this.semantic.getExpressionType(node.value) != TokenType.STRING){
@@ -1283,6 +1281,7 @@ class Parser {
             node = new ArraySubscriptAssignStatementNode(
                     identifier, subscriptExpr, parseExpression()
             );
+            if (node.value.tam > 0) SemanticErros.incompatibleTypes(lexer.line);
         }
 
         //Semantic Action
@@ -1924,11 +1923,19 @@ class CodeGenerator {
         return addr;
     }
 
-    public int doRelationalExpression(String operator, int op1Addr, int op2Addr) {
+    public int doRelationalExpression(
+        String operator, int op1Addr, int op2Addr,
+        TokenType op1Type, TokenType op2Type
+    ) {
         int addr = temp;
         switch (operator) {
             case "=":
-                addCode(String.format("relEquals %d %d %d", op1Addr, op2Addr, addr));
+                if (op1Type == TokenType.STRING)
+                    addCode(String.format("relEqualsStr %d %d %d", op1Addr, op2Addr, addr));
+                else if (op1Type == TokenType.INT)
+                    addCode(String.format("relEquals %d %d %d", op1Addr, op2Addr, addr));
+                else
+                    addCode(String.format("relEquals1Byte %d %d %d", op1Addr, op2Addr, addr));
                 temp += 1;
                 break;
             case "<>":
@@ -2143,6 +2150,8 @@ class CodeGenerator {
         if (s.size > 0) {
             if (s.type == TokenType.INT)
                 addData(String.format("%s dw %d DUP(?)", s.name, s.size));
+            else if (s.type == TokenType.STRING)
+                addData(String.format("%s db %d DUP(?)", s.name, s.size + 1));
             else
                 addData(String.format("%s db %d DUP(?)", s.name, s.size));
         }

@@ -802,9 +802,7 @@ EXPRESSION ::= RELATIONAL_EXPRESSION
     operador = guardar o operador ('=' | '<>' | '<' | '>' | '<=' | '>=') numa variavel
 }
 {3} {
-    se nao(
-        RELATIONAL_EXPRESSION.tamanho > 0
-        e operador = '='
+    se operador = '=' e RELATIONAL_EXPRESSION.tamanho > 0 e nao(
         e RELATIONAL_EXPRESSION.tipo = string
         e ADDITIVE_EXPRESSION1.tipo = string
     ) entao ERRO
