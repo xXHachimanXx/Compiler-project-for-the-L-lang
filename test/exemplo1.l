@@ -1,7 +1,7 @@
 /* Exemplo de Programa na linguagem L */
 
-int max;
-int n[3], max:=0, i;
+int max := 0;
+int n[3], i;
 
 main
 {

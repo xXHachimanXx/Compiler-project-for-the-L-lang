@@ -9,6 +9,14 @@ import java.util.Map.Entry;
 
 import java.io.InputStreamReader;
 
+/*
+COMPILADORES 2021/1
+
+Axell Brendow - 631822
+Felipe Andrade - 635093
+Maycon Bruno - 635337
+*/
+
 enum TokenType {
     EOF,
     MAIN,
@@ -1018,7 +1026,7 @@ class Parser {
             this.semantic.verifyTypeCompability(binaryNode); //Semantic Action
 
             node.end = this.codegen.doRelationalExpression(
-                operator, node.end, additiveExpression1.end,
+                operator, binaryNode.leftExpression.end, additiveExpression1.end,
                 nodeType, additiveType
             );
         }
@@ -1179,15 +1187,14 @@ class Parser {
         if(s.symbolClass == SymbolClass.CONST)
             SemanticErros.changeConst(identifier, lexer.line);
 
-        if(s.size > 0 && s.type != TokenType.STRING) 
-            SemanticErros.incompatibleTypes(lexer.line);
-
         this.codegen.doReadlnA1();
 
         eat(TokenType.IDENTIFIER);
         if (currentToken.type == TokenType.LEFT_BRACKET) {
             eat();
             
+            if (s.size == 0) SemanticErros.incompatibleTypes(lexer.line);
+
             ExpressionNode expression = parseExpression();
             node = new ReadlnArrayStatementNode(identifier, expression);
 
@@ -1219,7 +1226,8 @@ class Parser {
             SemanticErros.incompatibleTypes(lexer.line);
         }
 
-        this.codegen.doIfA1(expression.end);
+        String rotFalso = this.codegen.newLabel();
+        this.codegen.doIfA1(expression.end, rotFalso);
 
         eat(TokenType.RIGHT_PAREN);
         eat(TokenType.THEN);
@@ -1227,13 +1235,14 @@ class Parser {
         StatementNode elseStatement = null;
 
         if (currentToken.type == TokenType.ELSE) {
-            this.codegen.doIfA2();
+            String rotFim = this.codegen.newLabel();
+            this.codegen.doIfA2(rotFalso, rotFim);
             eat();
             elseStatement = parseStatementOrStatements();
-            this.codegen.doIfA3();
+            this.codegen.doIfA3(rotFim);
         }
         else {
-            this.codegen.doIfA4();
+            this.codegen.doIfA4(rotFalso);
         }
         IfStatementNode node = new IfStatementNode(expression, ifStatement, elseStatement);
         return node;
@@ -1333,29 +1342,33 @@ class Parser {
         if (currentToken.type != TokenType.SEMICOLON)
             init = parseCommaSeparatedStatements();
 
-        this.codegen.doForA1();
         eat(TokenType.SEMICOLON);
-
+            
+        String rotInicio = this.codegen.newLabel();
+        String rotIncremento = this.codegen.newLabel();
+        String rotComandos = this.codegen.newLabel();
+        String rotFim = this.codegen.newLabel();
+        this.codegen.doForA1(rotInicio);
         condition = parseExpression();
 
         if(this.semantic.getExpressionType(condition) != TokenType.BOOLEAN || condition.tam > 0 ){
             SemanticErros.incompatibleTypes(lexer.line);
         }
-        this.codegen.doForA2(condition.end);
+        this.codegen.doForA2(condition.end, rotFim, rotComandos, rotIncremento);
 
         eat(TokenType.SEMICOLON);
 
         if (currentToken.type != TokenType.RIGHT_PAREN)
             inc = parseCommaSeparatedStatements();
 
-        this.codegen.doForA3();
+        this.codegen.doForA3(rotInicio, rotComandos);
         eat(TokenType.RIGHT_PAREN);
 
         ForStatementNode node = new ForStatementNode(
                 init, condition, inc, parseStatementOrStatements()
         );
 
-        this.codegen.doForA4();
+        this.codegen.doForA4(rotIncremento, rotFim);
         return node;
     }
 
@@ -1793,7 +1806,6 @@ class CodeGenerator {
     int newLineTemp = -1;
     int readlnBuffer = -1;
     long labelCounter = 0;
-    String currentLabel = "R0";
 
     public CodeGenerator() {
         newLineTemp = address;
@@ -1805,9 +1817,9 @@ class CodeGenerator {
         address += 255;
     }
 
-    public void newLabel() {
+    public String newLabel() {
         ++this.labelCounter;
-        this.currentLabel = "R"+labelCounter;
+        return "R" + labelCounter;
     }
 
     private void addData(String line) {
@@ -2027,53 +2039,48 @@ class CodeGenerator {
         }
     }
 
-    public void doIfA1(int exprAddr) {
-        newLabel();
+    public void doIfA1(int exprAddr, String rotFalso) {
         addCode(String.format(
         """ 
         mov al, ds:[%d] ; Traz o booleano da memória
             mov ah, 0 ; Limpa possível lixo em AH
             cmp ax, 0 ; Compara o valor booleano com 0
             je %s
-        """, exprAddr, this.currentLabel));
+        """, exprAddr, rotFalso));
     }
 
-    public void doIfA2() {
-        newLabel();
+    public void doIfA2(String rotFalso, String rotFim) {
         addCode(String.format(
         """
         jmp %s
             %s:
-        """, this.currentLabel, "R"+(this.labelCounter-1) ));
+        """, rotFim, rotFalso));
     }
 
-    public void doIfA3() {
+    public void doIfA3(String rotFim) {
         addCode(String.format(
         """
         %s:
-        """, this.currentLabel ));
+        """, rotFim));
     }
 
-    public void doIfA4() {
+    public void doIfA4(String rotFalso) {
         addCode(String.format(
         """
         %s:
-        """, "R"+(this.labelCounter-1) ));
+        """, rotFalso));
     }
 
-    public void doForA1() {
-        newLabel(); // RotInicio
-        newLabel(); // RotIncremento
-        newLabel(); // RotComandos
-        newLabel(); // RotFim
-
+    public void doForA1(String rotInicio) {
         addCode(String.format(
         """
         %s:
-        """, "R"+(this.labelCounter-3) ));
+        """, rotInicio));
     }
 
-    public void doForA2(int exprAddr) {
+    public void doForA2(
+        int exprAddr, String rotFim, String rotComandos, String rotIncremento
+    ) {
         addCode(String.format(
         """
         mov al, ds:[%d] ; Traz o booleano da memória
@@ -2082,25 +2089,25 @@ class CodeGenerator {
         je %s
         jmp %s
         %s:
-        """, exprAddr, "R"+(this.labelCounter), "R"+(this.labelCounter-1), "R"+(this.labelCounter-2) ));
+        """, exprAddr, rotFim, rotComandos, rotIncremento));
     }
 
-    public void doForA3() {
+    public void doForA3(String rotInicio, String rotComandos) {
 
         addCode(String.format(
         """
         jmp %s
         %s:
-        """, "R"+(this.labelCounter-3), "R"+(this.labelCounter-1) ));
+        """, rotInicio, rotComandos));
     }
 
-    public void doForA4() {
+    public void doForA4(String rotIncremento, String rotFim) {
 
         addCode(String.format(
         """
         jmp %s
         %s:
-        """, "R"+(this.labelCounter-2), "R"+(this.labelCounter) ));
+        """, rotIncremento, rotFim));
     }
 
 

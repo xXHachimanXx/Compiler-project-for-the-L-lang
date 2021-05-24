@@ -91,6 +91,46 @@ land macro value1Ptr, value2Ptr, tempPtr
 endm
 
 ; =
+relEqualsStr macro value1Ptr, value2Ptr, tempPtr
+    LOCAL RotInicio, RotFim, RotVerdadeiro, RotFim2
+    mov di, value1Ptr
+    mov si, value2Ptr
+    RotInicio:
+        mov al, ds:[di] ; al = str1[i]
+        mov ah, 0
+        mov bx, '$'
+        cmp ax, bx
+        je RotFim ; sai do for caso str1[i] != '$'
+
+        mov al, ds:[di] ; al = str1[i]
+        mov ah, 0
+        mov bl, ds:[si] ; bl = str2[i]
+        mov bh, 0
+        cmp ax, bx
+        jne RotFim ; break
+        inc di
+        inc si
+        jmp RotInicio
+    
+    RotFim:
+    mov al, ds:[di] ; al = str1[i]
+    mov ah, 0
+    mov bl, ds:[si] ; bl = str2[i]
+    mov bh, 0
+    cmp ax, bx
+
+    je RotVerdadeiro
+    mov al, 00h
+    jmp RotFim2
+
+    RotVerdadeiro:
+        mov al, 01h
+
+    RotFim2:
+        mov ds:[tempPtr], al
+endm
+
+; =
 relEquals macro value1Ptr, value2Ptr, tempPtr
     LOCAL RotVerdadeiro, RotFim
     mov ax, ds:[value1Ptr]
@@ -383,7 +423,7 @@ endm
 readlnA2P1 macro globalCounterAddr, idAddr, exprAddr
     LOCAL R0, R1, R2
 
-    mov di,  + 2 ;posição do string
+    mov di, globalCounterAddr ;posição do string
     mov ax, 0 ;acumulador
     mov cx, 10 ;base decimal
     mov dx, 1 ;valor sinal +

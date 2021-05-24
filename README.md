@@ -531,10 +531,9 @@ EXPRESSION ::= RELATIONAL_EXPRESSION
     int 21h
 }
 
-<b>READLN_STATEMENT -> 'readln' '(' IDENTIFIER {1} ( '[' EXPRESSION {2} ']' | lambda {3} ) ')'</b>
+<b>READLN_STATEMENT -> 'readln' '(' IDENTIFIER {1} ( '[' {2} EXPRESSION {3} ']' | lambda {4} ) ')'</b>
 {1} {
     se tabela.get(IDENTIFIER.lex).classe = constante entao ERRO
-    se tabela.get(IDENTIFIER.lex).tamanho > 0 e tabela.get(IDENTIFIER.lex).tipo != string entao ERRO
 
     db 255 DUP(?) ; cria o buffer
 
@@ -551,6 +550,9 @@ EXPRESSION ::= RELATIONAL_EXPRESSION
     int 21h
 }
 {2} {
+    se tabela.get(IDENTIFIER.lex).tamanho = 0 entao ERRO
+}
+{3} {
     se EXPRESSION.tipo != inteiro ou EXPRESSION.tamanho > 0 entao ERRO
     se tabela.get(IDENTIFIER.lex).tipo = inteiro entao {
         mov di, contador_global_endereco + 2 ;posição do string
@@ -598,7 +600,7 @@ EXPRESSION ::= RELATIONAL_EXPRESSION
         mov ds:[bx], al
     }
 }
-{3} {
+{4} {
     se tabela.get(IDENTIFIER.lex).tipo = inteiro entao {
         mov di, contador_global_endereco + 2 ;posição do string
         mov ax, 0 ;acumulador
@@ -889,6 +891,7 @@ EXPRESSION ::= RELATIONAL_EXPRESSION
                 inc si
                 jmp RotInicio
             
+            RotFim:
             mov al, ds:[di] ; al = str1[i]
             mov ah, 0
             mov bl, ds:[si] ; bl = str2[i]
