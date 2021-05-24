@@ -1906,6 +1906,7 @@ class CodeGenerator {
                 break;
     
             case "or":
+                addCode(String.format("lor %d %d %d", op1Addr, op2Addr, addr));
                 temp += 1;
                 break;
         }
@@ -1963,19 +1964,31 @@ class CodeGenerator {
                 temp += 1;
                 break;
             case "<":
-                addCode(String.format("relLessThan %d %d %d", op1Addr, op2Addr, addr));
+                if (op1Type == TokenType.INT)
+                    addCode(String.format("relLessThan %d %d %d", op1Addr, op2Addr, addr));
+                else
+                    addCode(String.format("relLessThan1Byte %d %d %d", op1Addr, op2Addr, addr));
                 temp += 1;
                 break;
             case ">=":
-                addCode(String.format("relGreaterThanOrEqualTo %d %d %d", op1Addr, op2Addr, addr));
+                if (op1Type == TokenType.INT)
+                    addCode(String.format("relGreaterThanOrEqualTo %d %d %d", op1Addr, op2Addr, addr));
+                else
+                    addCode(String.format("relGreaterThanOrEqualTo1Byte %d %d %d", op1Addr, op2Addr, addr));
                 temp += 1;
                 break;
             case ">":
-                addCode(String.format("relGreaterThan %d %d %d", op1Addr, op2Addr, addr));
+                if (op1Type == TokenType.INT)
+                    addCode(String.format("relGreaterThan %d %d %d", op1Addr, op2Addr, addr));
+                else
+                    addCode(String.format("relGreaterThan1Byte %d %d %d", op1Addr, op2Addr, addr));
                 temp += 1;
                 break;
             case "<=":
-                addCode(String.format("relLessThanOrEqualTo %d %d %d", op1Addr, op2Addr, addr));
+                if (op1Type == TokenType.INT)
+                    addCode(String.format("relLessThanOrEqualTo %d %d %d", op1Addr, op2Addr, addr));
+                else
+                    addCode(String.format("relLessThanOrEqualTo1Byte %d %d %d", op1Addr, op2Addr, addr));
                 temp += 1;
                 break;
         }

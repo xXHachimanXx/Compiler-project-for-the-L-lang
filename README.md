@@ -21,8 +21,7 @@ Inside DosBox run:
 ```
 mount c: /COMPLETE/PATH/TO/THE/8086/FOLDER/ON/YOUR/COMPUTER
 c:
-masm /L simple.asm
-link simple.obj
+masm simple; | link simple;
 simple.exe
 ```
 

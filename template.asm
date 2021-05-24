@@ -90,6 +90,12 @@ land macro value1Ptr, value2Ptr, tempPtr
     mov ds:[tempPtr], al
 endm
 
+lor macro value1Ptr, value2Ptr, tempPtr
+    mov al, ds:[value1Ptr]
+    or al, ds:[value2Ptr]
+    mov ds:[tempPtr], al
+endm
+
 ; =
 relEqualsStr macro value1Ptr, value2Ptr, tempPtr
     LOCAL RotInicio, RotFim, RotVerdadeiro, RotFim2
@@ -136,9 +142,6 @@ relEquals macro value1Ptr, value2Ptr, tempPtr
     mov ax, ds:[value1Ptr]
     mov bx, ds:[value2Ptr]
 
-    mov ah, 00h
-    mov bh, 00h
-
     cmp ax, bx
 
     je RotVerdadeiro
@@ -149,7 +152,7 @@ RotVerdadeiro:
     mov ax, 01h
 
 RotFim:
-    mov ds:[tempPtr], ax
+    mov ds:[tempPtr], al
 endm
 
 ; =
@@ -180,9 +183,6 @@ relNotEquals macro value1Ptr, value2Ptr, tempPtr
     mov ax, ds:[value1Ptr]
     mov bx, ds:[value2Ptr]
 
-    mov ah, 00h
-    mov bh, 00h
-
     cmp ax, bx
 
     jne RotVerdadeiro
@@ -193,7 +193,7 @@ RotVerdadeiro:
     mov ax, 01h
 
 RotFim:
-    mov ds:[tempPtr], ax
+    mov ds:[tempPtr], al
 endm
 
 ; <>
@@ -224,6 +224,25 @@ relLessThan macro value1Ptr, value2Ptr, tempPtr
     mov ax, ds:[value1Ptr]
     mov bx, ds:[value2Ptr]
 
+    cmp ax, bx
+
+    jl RotVerdadeiro
+    mov ax, 00h
+    jmp RotFim
+
+RotVerdadeiro:
+    mov ax, 01h
+
+RotFim:
+    mov ds:[tempPtr], al
+endm
+
+; <
+relLessThan1Byte macro value1Ptr, value2Ptr, tempPtr
+    LOCAL RotVerdadeiro, RotFim
+    mov al, ds:[value1Ptr]
+    mov bl, ds:[value2Ptr]
+
     mov ah, 00h
     mov bh, 00h
 
@@ -237,7 +256,7 @@ RotVerdadeiro:
     mov ax, 01h
 
 RotFim:
-    mov ds:[tempPtr], ax
+    mov ds:[tempPtr], al
 endm
 
 ; >
@@ -245,6 +264,25 @@ relGreaterThan macro value1Ptr, value2Ptr, tempPtr
     LOCAL RotVerdadeiro, RotFim
     mov ax, ds:[value1Ptr]
     mov bx, ds:[value2Ptr]
+
+    cmp ax, bx
+
+    jg RotVerdadeiro
+    mov ax, 00h
+    jmp RotFim
+
+RotVerdadeiro:
+    mov ax, 01h
+
+RotFim:
+    mov ds:[tempPtr], al
+endm
+
+; >
+relGreaterThan1Byte macro value1Ptr, value2Ptr, tempPtr
+    LOCAL RotVerdadeiro, RotFim
+    mov al, ds:[value1Ptr]
+    mov bl, ds:[value2Ptr]
 
     mov ah, 00h
     mov bh, 00h
@@ -259,7 +297,7 @@ RotVerdadeiro:
     mov ax, 01h
 
 RotFim:
-    mov ds:[tempPtr], ax
+    mov ds:[tempPtr], al
 endm
 
 ; >=
@@ -267,6 +305,25 @@ relGreaterThanOrEqualTo macro value1Ptr, value2Ptr, tempPtr
     LOCAL RotVerdadeiro, RotFim
     mov ax, ds:[value1Ptr]
     mov bx, ds:[value2Ptr]
+
+    cmp ax, bx
+
+    jge RotVerdadeiro
+    mov ax, 00h
+    jmp RotFim
+
+RotVerdadeiro:
+    mov ax, 01h
+
+RotFim:
+    mov ds:[tempPtr], al
+endm
+
+; >=
+relGreaterThanOrEqualTo1Byte macro value1Ptr, value2Ptr, tempPtr
+    LOCAL RotVerdadeiro, RotFim
+    mov al, ds:[value1Ptr]
+    mov bl, ds:[value2Ptr]
 
     mov ah, 00h
     mov bh, 00h
@@ -281,7 +338,7 @@ RotVerdadeiro:
     mov ax, 01h
 
 RotFim:
-    mov ds:[tempPtr], ax
+    mov ds:[tempPtr], al
 endm
 
 ; <=
@@ -289,6 +346,25 @@ relLessThanOrEqualTo macro value1Ptr, value2Ptr, tempPtr
     LOCAL RotVerdadeiro, RotFim
     mov ax, ds:[value1Ptr]
     mov bx, ds:[value2Ptr]
+
+    cmp ax, bx
+
+    jle RotVerdadeiro
+    mov ax, 00h
+    jmp RotFim
+
+RotVerdadeiro:
+    mov ax, 01h
+
+RotFim:
+    mov ds:[tempPtr], al
+endm
+
+; <=
+relLessThanOrEqualTo1Byte macro value1Ptr, value2Ptr, tempPtr
+    LOCAL RotVerdadeiro, RotFim
+    mov al, ds:[value1Ptr]
+    mov bl, ds:[value2Ptr]
 
     mov ah, 00h
     mov bh, 00h
@@ -303,7 +379,7 @@ RotVerdadeiro:
     mov ax, 01h
 
 RotFim:
-    mov ds:[tempPtr], ax
+    mov ds:[tempPtr], al
 endm
 
 assignVar macro value1Ptr, value2Ptr
