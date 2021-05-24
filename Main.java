@@ -2216,16 +2216,6 @@ class CodeGenerator {
 
 public class Main {
     public static void main(String[] args) throws IOException {
-        // try (Scanner scan = new Scanner(System.in)) {
-        //     try {
-        //         while (true) {
-        //             System.err.println(scan.nextLine());
-        //         }
-        //     } catch (Exception e) {
-        //     }
-        // }
-        // System.exit(1);
-
         PushbackReader input = new PushbackReader(new InputStreamReader(System.in), 3);
         Lexer lexer = new Lexer(input);
         // Token tok = lexer.next();
