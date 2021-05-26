@@ -25,6 +25,14 @@ masm simple; | link simple;
 simple.exe
 ```
 
+if `masm simple; | link simple;` does not work for you, you can use:
+
+```
+masm /L simple.asm
+link simple.obj
+simple.exe
+```
+
 You can refresh the file system running `rescan`.
 
 If you wanna **debug** the .exe file, you can simple run `debug simple.exe`, then, inside the debugger, use `t` to go to next line, `r` to show registers and `d ds:0` to show 128 memory positions from the start of the data segment. More commands can be found on https://docs.microsoft.com/en-us/previous-versions/tn-archive/cc722863(v=technet.10)?redirectedfrom=MSDN.
