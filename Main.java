@@ -1665,8 +1665,16 @@ class Semantic{
             {
                 SemanticErros.incompatibleTypes(lexer.line);
             }
-            if(ParserUtils.isRelational(operator) && (tokenTypeLeft != tokenTypeRight
-                    || (tokenTypeLeft == TokenType.BOOLEAN || tokenTypeRight == TokenType.BOOLEAN)) )
+            if(ParserUtils.isRelational(operator) && tokenTypeLeft != tokenTypeRight)
+            {
+                SemanticErros.incompatibleTypes(lexer.line);
+            }
+            if(
+                ParserUtils.isRelational(operator)
+                && !operator.equals("=")
+                && !operator.equals("<>")
+                && (tokenTypeLeft == TokenType.BOOLEAN || tokenTypeRight == TokenType.BOOLEAN)
+            )
             {
                 SemanticErros.incompatibleTypes(lexer.line);
             }
@@ -1928,7 +1936,7 @@ class CodeGenerator {
                 break;
 
             case "%":
-                addCode(String.format("mod %d %d %d", op1Addr, op2Addr, addr));
+                addCode(String.format("module %d %d %d", op1Addr, op2Addr, addr));
                 temp += 2;
                 break;
 

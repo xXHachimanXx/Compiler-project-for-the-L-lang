@@ -8,7 +8,7 @@ main
     write("Digite compiladores em letras maiusculas:");
     readln(s1);
     if (s1="COMPILADORES") then writeln("correto"); else writeln("incorreto");
-    if ((not (s1="COMPILADORES") and (TRUE= not FALSE) or (1>2)) then writeln(s1," eh diferente de COMPILADORES.");
+    if (not (s1="COMPILADORES") and (TRUE= not FALSE) or (1>2)) then writeln(s1," eh diferente de COMPILADORES.");
     if (not ( not( s1="COMPILADORES")) and (TRUE= not FALSE) or (1>2)) then writeln(s1," eh igual a COMPILADORES.");
     write("Agora digite um numero positivo entre 10 e 20: ");
     readln(n);

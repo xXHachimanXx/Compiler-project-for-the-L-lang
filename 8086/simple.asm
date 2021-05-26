@@ -90,6 +90,12 @@ land macro value1Ptr, value2Ptr, tempPtr
     mov ds:[tempPtr], al
 endm
 
+lor macro value1Ptr, value2Ptr, tempPtr
+    mov al, ds:[value1Ptr]
+    or al, ds:[value2Ptr]
+    mov ds:[tempPtr], al
+endm
+
 ; =
 relEqualsStr macro value1Ptr, value2Ptr, tempPtr
     LOCAL RotInicio, RotFim, RotVerdadeiro, RotFim2
@@ -112,6 +118,7 @@ relEqualsStr macro value1Ptr, value2Ptr, tempPtr
         inc si
         jmp RotInicio
     
+    RotFim:
     mov al, ds:[di] ; al = str1[i]
     mov ah, 0
     mov bl, ds:[si] ; bl = str2[i]
@@ -135,6 +142,25 @@ relEquals macro value1Ptr, value2Ptr, tempPtr
     mov ax, ds:[value1Ptr]
     mov bx, ds:[value2Ptr]
 
+    cmp ax, bx
+
+    je RotVerdadeiro
+    mov ax, 00h
+    jmp RotFim
+
+RotVerdadeiro:
+    mov ax, 01h
+
+RotFim:
+    mov ds:[tempPtr], al
+endm
+
+; =
+relEquals1Byte macro value1Ptr, value2Ptr, tempPtr
+    LOCAL RotVerdadeiro, RotFim
+    mov al, ds:[value1Ptr]
+    mov bl, ds:[value2Ptr]
+
     mov ah, 00h
     mov bh, 00h
 
@@ -148,7 +174,7 @@ RotVerdadeiro:
     mov ax, 01h
 
 RotFim:
-    mov ds:[tempPtr], ax
+    mov ds:[tempPtr], al
 endm
 
 ; <>
@@ -156,6 +182,25 @@ relNotEquals macro value1Ptr, value2Ptr, tempPtr
     LOCAL RotVerdadeiro, RotFim
     mov ax, ds:[value1Ptr]
     mov bx, ds:[value2Ptr]
+
+    cmp ax, bx
+
+    jne RotVerdadeiro
+    mov ax, 00h
+    jmp RotFim
+
+RotVerdadeiro:
+    mov ax, 01h
+
+RotFim:
+    mov ds:[tempPtr], al
+endm
+
+; <>
+relNotEquals1Byte macro value1Ptr, value2Ptr, tempPtr
+    LOCAL RotVerdadeiro, RotFim
+    mov al, ds:[value1Ptr]
+    mov bl, ds:[value2Ptr]
 
     mov ah, 00h
     mov bh, 00h
@@ -170,7 +215,7 @@ RotVerdadeiro:
     mov ax, 01h
 
 RotFim:
-    mov ds:[tempPtr], ax
+    mov ds:[tempPtr], al
 endm
 
 ; <
@@ -178,6 +223,25 @@ relLessThan macro value1Ptr, value2Ptr, tempPtr
     LOCAL RotVerdadeiro, RotFim
     mov ax, ds:[value1Ptr]
     mov bx, ds:[value2Ptr]
+
+    cmp ax, bx
+
+    jl RotVerdadeiro
+    mov ax, 00h
+    jmp RotFim
+
+RotVerdadeiro:
+    mov ax, 01h
+
+RotFim:
+    mov ds:[tempPtr], al
+endm
+
+; <
+relLessThan1Byte macro value1Ptr, value2Ptr, tempPtr
+    LOCAL RotVerdadeiro, RotFim
+    mov al, ds:[value1Ptr]
+    mov bl, ds:[value2Ptr]
 
     mov ah, 00h
     mov bh, 00h
@@ -192,7 +256,7 @@ RotVerdadeiro:
     mov ax, 01h
 
 RotFim:
-    mov ds:[tempPtr], ax
+    mov ds:[tempPtr], al
 endm
 
 ; >
@@ -200,6 +264,25 @@ relGreaterThan macro value1Ptr, value2Ptr, tempPtr
     LOCAL RotVerdadeiro, RotFim
     mov ax, ds:[value1Ptr]
     mov bx, ds:[value2Ptr]
+
+    cmp ax, bx
+
+    jg RotVerdadeiro
+    mov ax, 00h
+    jmp RotFim
+
+RotVerdadeiro:
+    mov ax, 01h
+
+RotFim:
+    mov ds:[tempPtr], al
+endm
+
+; >
+relGreaterThan1Byte macro value1Ptr, value2Ptr, tempPtr
+    LOCAL RotVerdadeiro, RotFim
+    mov al, ds:[value1Ptr]
+    mov bl, ds:[value2Ptr]
 
     mov ah, 00h
     mov bh, 00h
@@ -214,7 +297,7 @@ RotVerdadeiro:
     mov ax, 01h
 
 RotFim:
-    mov ds:[tempPtr], ax
+    mov ds:[tempPtr], al
 endm
 
 ; >=
@@ -222,6 +305,25 @@ relGreaterThanOrEqualTo macro value1Ptr, value2Ptr, tempPtr
     LOCAL RotVerdadeiro, RotFim
     mov ax, ds:[value1Ptr]
     mov bx, ds:[value2Ptr]
+
+    cmp ax, bx
+
+    jge RotVerdadeiro
+    mov ax, 00h
+    jmp RotFim
+
+RotVerdadeiro:
+    mov ax, 01h
+
+RotFim:
+    mov ds:[tempPtr], al
+endm
+
+; >=
+relGreaterThanOrEqualTo1Byte macro value1Ptr, value2Ptr, tempPtr
+    LOCAL RotVerdadeiro, RotFim
+    mov al, ds:[value1Ptr]
+    mov bl, ds:[value2Ptr]
 
     mov ah, 00h
     mov bh, 00h
@@ -236,7 +338,7 @@ RotVerdadeiro:
     mov ax, 01h
 
 RotFim:
-    mov ds:[tempPtr], ax
+    mov ds:[tempPtr], al
 endm
 
 ; <=
@@ -244,6 +346,25 @@ relLessThanOrEqualTo macro value1Ptr, value2Ptr, tempPtr
     LOCAL RotVerdadeiro, RotFim
     mov ax, ds:[value1Ptr]
     mov bx, ds:[value2Ptr]
+
+    cmp ax, bx
+
+    jle RotVerdadeiro
+    mov ax, 00h
+    jmp RotFim
+
+RotVerdadeiro:
+    mov ax, 01h
+
+RotFim:
+    mov ds:[tempPtr], al
+endm
+
+; <=
+relLessThanOrEqualTo1Byte macro value1Ptr, value2Ptr, tempPtr
+    LOCAL RotVerdadeiro, RotFim
+    mov al, ds:[value1Ptr]
+    mov bl, ds:[value2Ptr]
 
     mov ah, 00h
     mov bh, 00h
@@ -258,7 +379,7 @@ RotVerdadeiro:
     mov ax, 01h
 
 RotFim:
-    mov ds:[tempPtr], ax
+    mov ds:[tempPtr], al
 endm
 
 assignVar macro value1Ptr, value2Ptr
@@ -422,7 +543,7 @@ endm
 readlnA2P1 macro globalCounterAddr, idAddr, exprAddr
     LOCAL R0, R1, R2
 
-    mov di,  + 2 ;posição do string
+    mov di, globalCounterAddr ;posição do string
     mov ax, 0 ;acumulador
     mov cx, 10 ;base decimal
     mov dx, 1 ;valor sinal +
@@ -538,11 +659,24 @@ data segment
     db 4000h DUP(64)
     db 13, 10, '$'
     db 255 DUP(?)
-    b db 6 DUP(?)
-    db "abcd", '$'
-    db "abcde", '$'
-    db "if me", '$'
-    db "else me", '$'
+    n dw 0
+    i dw 0
+    j dw 0
+    valor dw 0
+    s1 db 22 DUP(?)
+    db "Digite compiladores em letras maiusculas:", '$'
+    db "COMPILADORES", '$'
+    db "correto", '$'
+    db "incorreto", '$'
+    db "COMPILADORES", '$'
+    db " eh diferente de COMPILADORES.", '$'
+    db "COMPILADORES", '$'
+    db " eh igual a COMPILADORES.", '$'
+    db "Agora digite um numero positivo entre 10 e 20: ", '$'
+    db "O quadrado de ", '$'
+    db "-00000", '$'
+    db " eh ", '$'
+    db "-00000", '$'
 data ends
 
 ; --------------- CODE
@@ -553,23 +687,158 @@ start:
     MOV AX, data
     MOV DS, AX
 
-    createIntTemp 5, 0
-    assignStringVar 16642 16648 5
-    relEqualsStr 0 16653 2
+    createIntTemp 21, 0
+    print 16672
+    readlnA1 16387
+    readlnA3P3 16389 16650
+    relEqualsStr 16650 16714 2
     mov al, ds:[2] ; Traz o booleano da memória
     mov ah, 0 ; Limpa possível lixo em AH
     cmp ax, 0 ; Compara o valor booleano com 0
-    je R1
+    ;je R1
+    jne R_IF2
+    jmp R1
+    R_IF2:
 
-    print 16659
+    print 16727
     print 16384
-    jmp R2
+    jmp R3
     R1:
 
-    print 16665
+    print 16735
     print 16384
-    R2:
+    R3:
 
+    relEqualsStr 16650 16745 3
+    negate 3 4
+    createBoolTemp 1 5
+    createBoolTemp 0 6
+    negate 6 7
+    relEquals1Byte 5 7 8
+    land 4 8 9
+    createIntTemp 1, 10
+    createIntTemp 2, 12
+    relGreaterThan 10 12 14
+    lor 9 14 15
+    mov al, ds:[15] ; Traz o booleano da memória
+    mov ah, 0 ; Limpa possível lixo em AH
+    cmp ax, 0 ; Compara o valor booleano com 0
+    ;je R4
+    jne R_IF5
+    jmp R4
+    R_IF5:
+
+    print 16650
+    print 16758
+    print 16384
+    R4:
+
+    relEqualsStr 16650 16789 16
+    negate 16 17
+    negate 17 18
+    createBoolTemp 1 19
+    createBoolTemp 0 20
+    negate 20 21
+    relEquals1Byte 19 21 22
+    land 18 22 23
+    createIntTemp 1, 24
+    createIntTemp 2, 26
+    relGreaterThan 24 26 28
+    lor 23 28 29
+    mov al, ds:[29] ; Traz o booleano da memória
+    mov ah, 0 ; Limpa possível lixo em AH
+    cmp ax, 0 ; Compara o valor booleano com 0
+    ;je R6
+    jne R_IF7
+    jmp R6
+    R_IF7:
+
+    print 16650
+    print 16802
+    print 16384
+    R6:
+
+    print 16828
+    readlnA1 16387
+    readlnA3P1 16389 16642
+    createIntTemp 0, 30
+    assignVar 16648 30
+    createIntTemp 1, 32
+    assignVar 16644 32
+    R8:
+
+    relLessThanOrEqualTo 16644 16642 34
+    mov al, ds:[34] ; Traz o booleano da memória
+mov ah, 0 ; Limpa possível lixo em AH
+cmp ax, 0 ; Compara o valor booleano com 0
+;je R11
+jne R_FOR12
+jmp R11
+R_FOR12:
+jmp R10
+R9:
+
+    createIntTemp 1, 35
+    sum 16644 35 37
+    assignVar 16644 37
+    jmp R8
+R10:
+
+    createIntTemp 1, 39
+    assignVar 16646 39
+    R13:
+
+    relLessThanOrEqualTo 16646 16642 41
+    mov al, ds:[41] ; Traz o booleano da memória
+mov ah, 0 ; Limpa possível lixo em AH
+cmp ax, 0 ; Compara o valor booleano com 0
+;je R16
+jne R_FOR17
+jmp R16
+R_FOR17:
+jmp R15
+R14:
+
+    createIntTemp 1, 42
+    sum 16646 42 44
+    assignVar 16646 44
+    jmp R13
+R15:
+
+    createIntTemp 40, 46
+    createIntTemp 20, 48
+    divide 46 48 50
+    createIntTemp 0, 52
+    createIntTemp 8, 54
+    multiply 52 54 56
+    subtract 16642 56 58
+    createIntTemp 7, 60
+    createIntTemp 6, 62
+    module 60 62 64
+    sum 58 64 66
+    createIntTemp 1, 68
+    sum 16644 68 70
+    createIntTemp 1, 72
+    subtract 70 72 74
+    subtract 74 16644 76
+    subtract 66 76 78
+    subtract 78 16642 80
+    multiply 50 80 82
+    sum 16648 82 84
+    assignVar 16648 84
+    jmp R14
+R16:
+
+    jmp R9
+R11:
+
+    print 16876
+    intToStr 16642 16891
+    print 16891
+    print 16898
+    intToStr 16648 16903
+    print 16903
+    print 16384
 
     MOV AH, 4CH ; Exit
     INT 21H
